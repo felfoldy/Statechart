@@ -5,17 +5,15 @@ import PackageDescription
 
 let package = Package(
     name: "StateGraph",
+    platforms: [.macOS(.v14), .iOS(.v17), .watchOS(.v10), .tvOS(.v17)],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "StateGraph",
-            targets: ["StateGraph"]),
+        .library(name: "StateGraph", targets: ["StateGraph"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/felfoldy/LogTools.git", from: "1.0.1"),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        .target(
-            name: "StateGraph"),
+        .target(name: "StateGraph", dependencies: ["LogTools"]),
         .testTarget(
             name: "StateGraphTests",
             dependencies: ["StateGraph"]
