@@ -7,15 +7,125 @@
 
 import SwiftUI
 
+@Observable
+class StateGraphEditorModel<Context> {
+    var graph: StateGraph<Context>
+    var layout: StateGraphLayoutDescription<Context>
+    
+    init(graph: StateGraph<Context>) {
+        self.graph = graph
+        
+        layout = StateGraphLayoutDescription(graph: graph)
+    }
+}
+
 struct StateGraphEditor<Context, NodeContent: View>: View {
-    let graph: StateGraph<Context>
-    let node: (State<Context>) -> NodeContent
+    @SwiftUI.State var model: StateGraphEditorModel<Context>
+    let stateView: (State<Context>) -> NodeContent
+    
+    var graph: StateGraph<Context> { model.graph }
+    
+    var nodes: [State<Context>] {
+        graph.states.values.sorted(by: { $0.name < $1.name })
+    }
+    
+    init(model: StateGraphEditorModel<Context>, @ViewBuilder stateView: @escaping (State<Context>) -> NodeContent) {
+        _model = .init(initialValue: model)
+        self.stateView = stateView
+    }
     
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
-            Text("Content")
+            StateGraphLayout(description: $model.layout) {
+                ForEach(nodes) { state in
+                    StateView(layout: $model.layout, state: state, stateView: stateView)
+                }
+            }
+            .environment(\.activeStateId, graph.activeState.id)
+            .padding()
         }
-        .navigationTitle(graph.name)
+    }
+}
+
+extension StateGraphEditor {
+    init(graph: StateGraph<Context>,
+         @ViewBuilder stateView: @escaping (State<Context>) -> NodeContent) {
+        self.init(model: .init(graph: graph), stateView: stateView)
+    }
+}
+
+struct StateView<Context, NodeContent: View>: View {
+    @Binding var layout: StateGraphLayoutDescription<Context>
+    
+    let state: State<Context>
+    let stateView: (State<Context>) -> NodeContent
+    
+    @SwiftUI.State var translation: CGSize = .zero
+    
+    var isTranslating: Bool { translation != .zero }
+    
+    var body: some View {
+        stateView(state)
+            .opacity(isTranslating ? 0.3 : 1)
+            .offset(translation)
+            .simultaneousGesture(
+                DragGesture()
+                    .onChanged { value in
+                        translation = value.translation
+                    }
+                    .onEnded { value in
+                        withAnimation {
+                            translation = .zero
+                            layout.finalize(key: state.id,
+                                            translation: value.translation)
+                        }
+                    }
+            )
+            .background {
+                if translation == .zero {
+                    GeometryReader { geometry in
+                        let size = geometry.size
+                        
+                        // Left anchor.
+                        AnchorHandleView()
+                            .offset(y: size.height / 2)
+                        
+                        // Right anchor.
+                        AnchorHandleView()
+                            .offset(x: size.width,
+                                    y: size.height / 2)
+                        
+                        // Top anchor.
+                        AnchorHandleView()
+                            .offset(x: size.width / 2)
+                        
+                        // Bottom anchor.
+                        AnchorHandleView()
+                            .offset(x: size.width / 2,
+                                    y: size.height)
+                    }
+                }
+            }
+            .layoutStateID(state.id)
+            .environment(\.stateId, state.id)
+    }
+}
+
+struct AnchorHandleView: View {
+    @SwiftUI.State private var isHovered: Bool = false
+    
+    var body: some View {
+        Button {} label: {
+            Circle()
+                .frame(width: 20, height: 20)
+                .padding(8)
+        }
+        .onHover { isHovered in
+            self.isHovered = isHovered
+        }
+        .buttonStyle(.plain)
+        .offset(x: -18, y: -18)
+        .opacity(isHovered ? 1 : 0.2)
     }
 }
 
@@ -24,19 +134,28 @@ struct StateGraphEditor<Context, NodeContent: View>: View {
     
     class DrawableStateGraph: StateGraph<Context> {
         init?() {
-            super.init(name: "Graph",
-                       states: [.empty("Default")],
-                       transitions: [:],
-                       entryId: "Default")
+            super.init(
+                name: "Graph",
+                states: [
+                    .empty("Default"),
+                    .empty("Other"),
+                ],
+                transitions: [:],
+                entryId: "Default"
+            )
         }
     }
     
     return NavigationStack {
-        StateGraphEditor(graph: DrawableStateGraph()!) { stateNode in
-            Text(stateNode.name)
-                .padding()
-                .background(.thinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }.padding()
+        let graph = DrawableStateGraph()!
+        
+        StateGraphEditor(graph: graph) { state in
+            Button(state.name) {
+                
+            }
+            .buttonStyle(.stateNode)
+        }
+        .background(.gray)
+        .navigationTitle(graph.name)
     }
 }
