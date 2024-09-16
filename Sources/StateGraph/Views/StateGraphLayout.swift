@@ -7,8 +7,34 @@
 
 import SwiftUI
 
+struct NodeAnchor {
+    enum Anchor {
+        case top, bottom, left, right
+    }
+    
+    let name: String
+    let anchor: Anchor
+    
+    func anchor(in rect: CGRect) -> CGPoint {
+        switch anchor {
+        case .top: CGPoint(x: rect.midX, y: rect.minY)
+        case .bottom: CGPoint(x: rect.midX, y: rect.maxY)
+        case .left: CGPoint(x: rect.minX, y: rect.midY)
+        case .right: CGPoint(x: rect.maxX, y: rect.midY)
+        }
+    }
+}
+
+struct TransitionDescription: Identifiable {
+    var id: Set<String> { [base.name, target.name] }
+    
+    var base: NodeAnchor
+    var target: NodeAnchor
+}
+
 struct StateGraphLayoutDescription<Context> {
     var offsets: [String : CGPoint]
+    var transitions: [TransitionDescription]
 
     init(graph: StateGraph<Context>) {
         let offsets = graph.states.keys
@@ -21,6 +47,15 @@ struct StateGraphLayoutDescription<Context> {
         self.offsets = Dictionary(grouping: offsets, by: \.name)
             .mapValues { values in
                 CGPoint(x: values[0].x, y: 0)
+            }
+        
+        transitions = graph.transitions.values
+            .flatMap { $0 }
+            .map { transition in
+                TransitionDescription(
+                    base: NodeAnchor(name: transition.base, anchor: .right),
+                    target: NodeAnchor(name: transition.target, anchor: .left)
+                )
             }
     }
     
@@ -58,7 +93,7 @@ struct StateGraphLayout<Context>: Layout {
     @Binding var description: StateGraphLayoutDescription<Context>
     
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rect = subviews
+        subviews
             .compactMap { view -> CGRect? in
                 guard let id = view[NodeIdentifierValueKey.self],
                       let offset = description.offsets[id] else {
@@ -72,10 +107,7 @@ struct StateGraphLayout<Context>: Layout {
             .reduce(CGRect.zero) { result, rect in
                 result.union(rect)
             }
-        
-        print(rect)
-
-        return CGSize(width: rect.width, height: rect.height)
+            .size
     }
     
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
@@ -85,7 +117,9 @@ struct StateGraphLayout<Context>: Layout {
                 continue
             }
             
-            view.place(at: offset, proposal: proposal)
+            let newOffset = CGPoint(x: bounds.minX + offset.x, y: bounds.minY + offset.y)
+            
+            view.place(at: newOffset, proposal: proposal)
         }
     }
 }

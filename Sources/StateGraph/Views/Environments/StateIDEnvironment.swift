@@ -17,6 +17,11 @@ struct ActiveStateEnvironmentKey: @preconcurrency EnvironmentKey {
     static let defaultValue: String? = nil
 }
 
+@MainActor
+struct StateTranslationEnvironmentKey: @preconcurrency EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     public var stateId: String? {
         get { self[StateIDEnvironmentKey.self] }
@@ -26,5 +31,10 @@ extension EnvironmentValues {
     public var activeStateId: String? {
         get { self[ActiveStateEnvironmentKey.self] }
         set { self[ActiveStateEnvironmentKey.self] = newValue }
+    }
+    
+    public var stateTranslation: Bool {
+        get { self[StateTranslationEnvironmentKey.self] }
+        set { self[StateTranslationEnvironmentKey.self] = newValue }
     }
 }

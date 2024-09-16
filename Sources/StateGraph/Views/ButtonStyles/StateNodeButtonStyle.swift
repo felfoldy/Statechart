@@ -11,22 +11,29 @@ import SwiftUI
 struct StateNodeButtonStyle: ButtonStyle {
     @Environment(\.stateId) private var stateId
     @Environment(\.activeStateId) private var activeStateId
+    @Environment(\.stateTranslation) private var isTranslating
+    
+    @SwiftUI.State private var isHovered = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding()
             .background {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(.thinMaterial)
+                    .fill(isHovered ? AnyShapeStyle(.selection) : AnyShapeStyle(.thinMaterial))
                     .shadow(radius: 4, y: 2)
             }
-            .background {
-                if activeStateId == stateId {
+            .opacity(isTranslating ? 0.1 : 1)
+            .overlay {
+                if activeStateId == stateId || isTranslating {
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(.orange.gradient, lineWidth: 4)
+                        .stroke(isTranslating ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange.gradient), lineWidth: 4)
                 }
             }
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .onHover { isHovered in
+                self.isHovered = isHovered
+            }
     }
 }
 

@@ -42,7 +42,12 @@ struct StateGraphEditor<Context, NodeContent: View>: View {
                 }
             }
             .environment(\.activeStateId, graph.activeState.id)
-            .padding()
+            .padding(40)
+            .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
+                ForEach(model.layout.transitions) { transition in
+                    TransitionView(transition: transition, anchors: anchors)
+                }
+            }
         }
     }
 }
@@ -62,11 +67,9 @@ struct StateView<Context, NodeContent: View>: View {
     
     @SwiftUI.State var translation: CGSize = .zero
     
-    var isTranslating: Bool { translation != .zero }
-    
     var body: some View {
         stateView(state)
-            .opacity(isTranslating ? 0.3 : 1)
+            .setBoundsAnchor(for: state.id)
             .offset(translation)
             .simultaneousGesture(
                 DragGesture()
@@ -82,32 +85,32 @@ struct StateView<Context, NodeContent: View>: View {
                     }
             )
             .background {
-                if translation == .zero {
-                    GeometryReader { geometry in
-                        let size = geometry.size
-                        
-                        // Left anchor.
-                        AnchorHandleView()
-                            .offset(y: size.height / 2)
-                        
-                        // Right anchor.
-                        AnchorHandleView()
-                            .offset(x: size.width,
-                                    y: size.height / 2)
-                        
-                        // Top anchor.
-                        AnchorHandleView()
-                            .offset(x: size.width / 2)
-                        
-                        // Bottom anchor.
-                        AnchorHandleView()
-                            .offset(x: size.width / 2,
-                                    y: size.height)
-                    }
+                GeometryReader { geometry in
+                    let size = geometry.size
+                    
+                    // Left anchor.
+                    AnchorHandleView()
+                        .offset(y: size.height / 2)
+                    
+                    // Right anchor.
+                    AnchorHandleView()
+                        .offset(x: size.width,
+                                y: size.height / 2)
+                    
+                    // Top anchor.
+                    AnchorHandleView()
+                        .offset(x: size.width / 2)
+                    
+                    // Bottom anchor.
+                    AnchorHandleView()
+                        .offset(x: size.width / 2,
+                                y: size.height)
                 }
+                .opacity(translation == .zero ? 1 : 0)
             }
             .layoutStateID(state.id)
             .environment(\.stateId, state.id)
+            .environment(\.stateTranslation, translation != .zero)
     }
 }
 
@@ -126,6 +129,16 @@ struct AnchorHandleView: View {
         .buttonStyle(.plain)
         .offset(x: -18, y: -18)
         .opacity(isHovered ? 1 : 0.2)
+        .highPriorityGesture(
+            DragGesture()
+                .onChanged { value in
+                    print(value.location)
+                }
+                .onEnded { value in
+                    print("ended")
+                    isHovered = false
+                }
+        )
     }
 }
 
@@ -140,7 +153,11 @@ struct AnchorHandleView: View {
                     .empty("Default"),
                     .empty("Other"),
                 ],
-                transitions: [:],
+                transitions: [
+                    "Default" : [
+                        Transition<Context>(base: "Default", target: "Other", condition: { _ in false })
+                    ],
+                ],
                 entryId: "Default"
             )
         }
@@ -155,7 +172,7 @@ struct AnchorHandleView: View {
             }
             .buttonStyle(.stateNode)
         }
-        .background(.gray)
+        .background(.gray.opacity(0.5))
         .navigationTitle(graph.name)
     }
 }
