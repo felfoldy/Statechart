@@ -11,11 +11,11 @@ import SwiftUI
 class StateGraphEditorModel<Context> {
     var graph: StateGraph<Context>
     var layout: StateGraphLayoutDescription<Context>
+    var anchorTranslation: (String, CGPoint)?
     
     init(graph: StateGraph<Context>) {
         self.graph = graph
-        
-        layout = StateGraphLayoutDescription(graph: graph)
+        layout = .stack(graph: graph)
     }
 }
 
@@ -44,6 +44,23 @@ struct StateGraphEditor<Context, NodeContent: View>: View {
             .environment(\.activeStateId, graph.activeState.id)
             .padding(40)
             .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
+                if let (preview, translation) = model.layout.transitionPreview,
+                   let nodeAnchor = anchors[preview.name] {
+                    GeometryReader { geometry in
+                        Path { path in
+                            let previewAnchor = preview.anchor(in: geometry[nodeAnchor])
+                            
+                            path.move(to: previewAnchor)
+                            
+                            let target = CGPoint(
+                                x: previewAnchor.x + translation.width,
+                                y: previewAnchor.y + translation.height
+                            )
+                            path.addLine(to: target)
+                        }.stroke()
+                    }
+                }
+                
                 ForEach(model.layout.transitions) { transition in
                     TransitionView(transition: transition, anchors: anchors)
                 }
@@ -70,6 +87,7 @@ struct StateView<Context, NodeContent: View>: View {
     var body: some View {
         stateView(state)
             .setBoundsAnchor(for: state.id)
+            // Move stateView.
             .offset(translation)
             .simultaneousGesture(
                 DragGesture()
@@ -79,34 +97,22 @@ struct StateView<Context, NodeContent: View>: View {
                     .onEnded { value in
                         withAnimation {
                             translation = .zero
-                            layout.finalize(key: state.id,
-                                            translation: value.translation)
+                            layout.move(node: state.id, by: value.translation)
                         }
                     }
             )
+            // Anchors.
             .background {
                 GeometryReader { geometry in
                     let size = geometry.size
                     
-                    // Left anchor.
-                    AnchorHandleView()
-                        .offset(y: size.height / 2)
-                    
-                    // Right anchor.
-                    AnchorHandleView()
-                        .offset(x: size.width,
-                                y: size.height / 2)
-                    
-                    // Top anchor.
-                    AnchorHandleView()
-                        .offset(x: size.width / 2)
-                    
-                    // Bottom anchor.
-                    AnchorHandleView()
-                        .offset(x: size.width / 2,
-                                y: size.height)
+                    ForEach(AnchorType.allCases, id: \.self) { type in
+                        AnchorHandleView(type: type, nodeSize: size, layout: $layout)
+                    }
                 }
-                .opacity(translation == .zero ? 1 : 0)
+                .animation(.default) { placeholder in
+                    placeholder.opacity(translation == .zero ? 1 : 0)
+                }
             }
             .layoutStateID(state.id)
             .environment(\.stateId, state.id)
@@ -114,8 +120,29 @@ struct StateView<Context, NodeContent: View>: View {
     }
 }
 
-struct AnchorHandleView: View {
+struct AnchorHandleView<Context>: View {
+    let type: AnchorType
+    let nodeSize: CGSize
+    @Binding var layout: StateGraphLayoutDescription<Context>
+
     @SwiftUI.State private var isHovered: Bool = false
+    @Environment(\.stateId) private var stateId
+    
+    private var offset: CGSize {
+        let width: CGFloat = switch type {
+        case .top, .bottom: nodeSize.width / 2
+        case .left: 0.0
+        case .right: nodeSize.width
+        }
+        
+        let height: CGFloat = switch type {
+        case .top: 0.0
+        case .bottom: nodeSize.height
+        case .left, .right: nodeSize.height / 2
+        }
+        
+        return CGSize(width: width - 18, height: height - 18)
+    }
     
     var body: some View {
         Button {} label: {
@@ -127,18 +154,24 @@ struct AnchorHandleView: View {
             self.isHovered = isHovered
         }
         .buttonStyle(.plain)
-        .offset(x: -18, y: -18)
+        .offset(offset)
         .opacity(isHovered ? 1 : 0.2)
         .highPriorityGesture(
             DragGesture()
                 .onChanged { value in
-                    print(value.location)
+                    guard let stateId else { return }
+                    layout.transitionPreview = (
+                        NodeAnchorDescription(name: stateId, anchor: type),
+                        value.translation
+                    )
                 }
                 .onEnded { value in
                     print("ended")
                     isHovered = false
+                    layout.transitionPreview = nil
                 }
         )
+        .animation(.default, value: isHovered)
     }
 }
 

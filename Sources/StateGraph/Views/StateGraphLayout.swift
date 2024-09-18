@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-struct NodeAnchor {
-    enum Anchor {
-        case top, bottom, left, right
-    }
-    
+enum AnchorType: CaseIterable {
+    case top, bottom, left, right
+}
+
+struct NodeAnchorDescription {
     let name: String
-    let anchor: Anchor
+    let anchor: AnchorType
     
     func anchor(in rect: CGRect) -> CGPoint {
         switch anchor {
@@ -28,54 +28,63 @@ struct NodeAnchor {
 struct TransitionDescription: Identifiable {
     var id: Set<String> { [base.name, target.name] }
     
-    var base: NodeAnchor
-    var target: NodeAnchor
+    var base: NodeAnchorDescription
+    var target: NodeAnchorDescription
 }
 
 struct StateGraphLayoutDescription<Context> {
     var offsets: [String : CGPoint]
     var transitions: [TransitionDescription]
+    var transitionPreview: (NodeAnchorDescription, CGSize)?
 
-    init(graph: StateGraph<Context>) {
-        let offsets = graph.states.keys
+    init(offsets: [String : CGPoint], transitions: [TransitionDescription]) {
+        self.offsets = offsets
+        self.transitions = transitions
+    }
+    
+    mutating func move(node: String, by translation: CGSize) {
+        let oldOffset = offsets[node] ?? .zero
+        let newOffset = CGPoint(x: oldOffset.x + translation.width,
+                                y: oldOffset.y + translation.height)
+        
+        offsets[node] = newOffset
+        
+        // Reposition the offsets to the top-left.
+        let minX = offsets.values.map(\.x).min() ?? 0
+        let minY = offsets.values.map(\.y).min() ?? 0
+        
+        if minX == 0 && minY == 0 { return }
+        
+        for (key, value) in offsets {
+            offsets[key] = CGPoint(x: value.x - minX, y: value.y - minY)
+        }
+    }
+}
+
+extension StateGraphLayoutDescription {
+    static func stack(graph: StateGraph<Context>) -> Self {
+        let mappedOffsets = graph.states.keys
             .sorted(by: <)
             .enumerated()
             .map { index, value in
                 (name: value, x: index * 200)
             }
 
-        self.offsets = Dictionary(grouping: offsets, by: \.name)
+        let offsets = Dictionary(grouping: mappedOffsets, by: \.name)
             .mapValues { values in
                 CGPoint(x: values[0].x, y: 0)
             }
         
-        transitions = graph.transitions.values
+        let transitions = graph.transitions.values
             .flatMap { $0 }
             .map { transition in
                 TransitionDescription(
-                    base: NodeAnchor(name: transition.base, anchor: .right),
-                    target: NodeAnchor(name: transition.target, anchor: .left)
+                    base: NodeAnchorDescription(name: transition.base, anchor: .right),
+                    target: NodeAnchorDescription(name: transition.target, anchor: .left)
                 )
             }
-    }
-    
-    mutating func finalize(key: String, translation: CGSize) {
-        let oldOffset = offsets[key] ?? .zero
-        let newOffset = CGPoint(x: oldOffset.x + translation.width, y: oldOffset.y + translation.height)
-        
-        offsets[key] = newOffset
-        
-        if let min = offsets.values.map(\.x).min(), min != 0 {
-            for (key, value) in offsets {
-                offsets[key]?.x = value.x - min
-            }
-        }
-        
-        if let min = offsets.values.map(\.y).min(), min != 0 {
-            for (key, value) in offsets {
-                offsets[key]?.y = value.y - min
-            }
-        }
+
+        return .init(offsets: offsets, transitions: transitions)
     }
 }
 
@@ -117,7 +126,8 @@ struct StateGraphLayout<Context>: Layout {
                 continue
             }
             
-            let newOffset = CGPoint(x: bounds.minX + offset.x, y: bounds.minY + offset.y)
+            let newOffset = CGPoint(x: bounds.minX + offset.x,
+                                    y: bounds.minY + offset.y)
             
             view.place(at: newOffset, proposal: proposal)
         }
