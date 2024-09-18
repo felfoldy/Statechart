@@ -35,7 +35,6 @@ struct TransitionDescription: Identifiable {
 struct StateGraphLayoutDescription<Context> {
     var offsets: [String : CGPoint]
     var transitions: [TransitionDescription]
-    var transitionPreview: (NodeAnchorDescription, CGSize)?
 
     init(offsets: [String : CGPoint], transitions: [TransitionDescription]) {
         self.offsets = offsets
