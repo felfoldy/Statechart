@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StateView<Context, NodeContent: View>: View {
-    @Binding var layout: StateGraphLayoutDescription<Context>
+    @Binding var layout: StateGraphLayoutDescription
     
     let state: State<Context>
     let stateView: (State<Context>) -> NodeContent

@@ -10,7 +10,7 @@ import SwiftUI
 @Observable
 class StateGraphEditorModel<Context> {
     var graph: StateGraph<Context>
-    var layout: StateGraphLayoutDescription<Context>
+    var layout: StateGraphLayoutDescription
     var anchorTranslation: (String, CGPoint)?
     
     init(graph: StateGraph<Context>) {

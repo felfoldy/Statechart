@@ -25,13 +25,18 @@ struct TransitionDescription: Identifiable {
     }
 }
 
-struct StateGraphLayoutDescription<Context> {
+struct StateGraphLayoutDescription {
     var offsets: [String : CGPoint]
     var transitions: [TransitionDescription]
 
-    init(offsets: [String : CGPoint], transitions: [TransitionDescription]) {
+    init<Context>(offsets: [String : CGPoint], chart: StateGraph<Context>) {
         self.offsets = offsets
-        self.transitions = transitions
+        self.transitions = chart.transitions.values
+            .flatMap { $0 }
+            .map { transition in
+                TransitionDescription(base: transition.base,
+                                      target: transition.target)
+            }
     }
     
     mutating func move(node: String, by translation: CGSize) {
@@ -54,12 +59,13 @@ struct StateGraphLayoutDescription<Context> {
 }
 
 extension StateGraphLayoutDescription {
-    static func stack(graph: StateGraph<Context>) -> Self {
+    static func stack<Context>(graph: StateGraph<Context>,
+                               spacing: CGFloat = 200) -> Self {
         let mappedOffsets = graph.states.keys
             .sorted(by: <)
             .enumerated()
             .map { index, value in
-                (name: value, x: index * 200)
+                (name: value, x: CGFloat(index) * spacing)
             }
 
         let offsets = Dictionary(grouping: mappedOffsets, by: \.name)
@@ -67,14 +73,7 @@ extension StateGraphLayoutDescription {
                 CGPoint(x: values[0].x, y: 0)
             }
 
-        let transitions = graph.transitions.values
-            .flatMap { $0 }
-            .map { transition in
-                TransitionDescription(base: transition.base,
-                                      target: transition.target)
-            }
-
-        return .init(offsets: offsets, transitions: transitions)
+        return .init(offsets: offsets, chart: graph)
     }
 }
 
@@ -88,8 +87,8 @@ extension View {
     }
 }
 
-struct StateGraphLayout<Context>: Layout {
-    @Binding var description: StateGraphLayoutDescription<Context>
+struct StateGraphLayout: Layout {
+    @Binding var description: StateGraphLayoutDescription
     
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         subviews

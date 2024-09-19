@@ -4,19 +4,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "StateGraph",
+    name: "Statechart",
     platforms: [.macOS(.v14), .iOS(.v17), .watchOS(.v10), .tvOS(.v17)],
     products: [
-        .library(name: "StateGraph", targets: ["StateGraph"]),
+        .library(name: "Statechart", targets: ["Statechart"]),
     ],
     dependencies: [
         .package(url: "https://github.com/felfoldy/LogTools.git", from: "1.0.1"),
     ],
     targets: [
-        .target(name: "StateGraph", dependencies: ["LogTools"]),
+        .target(name: "Statechart", dependencies: ["LogTools"]),
         .testTarget(
-            name: "StateGraphTests",
-            dependencies: ["StateGraph"]
+            name: "StatechartTests",
+            dependencies: ["Statechart"]
         ),
     ]
 )
