@@ -44,7 +44,7 @@ struct StateGraphEditor<Context, NodeContent: View>: View {
             .environment(\.activeStateId, graph.activeState.id)
             .padding(40)
             .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
-                ForEach(model.layout.transitions) { transition in
+                ForEach($model.layout.transitions) { transition in
                     TransitionView(transition: transition, anchors: anchors)
                 }
             }
@@ -70,9 +70,40 @@ struct StateView<Context, NodeContent: View>: View {
     var body: some View {
         stateView(state)
             .setBoundsAnchor(for: state.id)
+            .background {
+                let anchors = layout.transitions
+                    .filter { $0.target == state.id }
+                    .compactMap(\.anchor)
+                
+                ForEach(Array(Set(anchors)), id: \.self) { anchor in
+                    switch anchor {
+                    case .top:
+                        Image(systemName: "arrowtriangle.down.fill")
+                            .font(.system(size: 16))
+                            .offset(x: 0, y: -12)
+                            .frame(maxHeight: .infinity, alignment: .top)
+                    case .bottom:
+                        Image(systemName: "arrowtriangle.up.fill")
+                            .font(.system(size: 16))
+                            .offset(x: 0, y: +12)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                    case .left:
+                        Image(systemName: "arrowtriangle.right.fill")
+                            .font(.system(size: 16))
+                            .offset(x: -12, y: 0)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    case .right:
+                        Image(systemName: "arrowtriangle.left.fill")
+                            .font(.system(size: 16))
+                            .offset(x: +12, y: 0)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
+                .foregroundStyle(.link)
+            }
             // Move stateView.
             .offset(translation)
-            .simultaneousGesture(
+            .highPriorityGesture(
                 DragGesture()
                     .onChanged { value in
                         translation = value.translation
@@ -100,10 +131,15 @@ struct StateView<Context, NodeContent: View>: View {
                 states: [
                     .empty("Default"),
                     .empty("Other"),
+                    .empty("Other2"),
                 ],
                 transitions: [
                     "Default" : [
                         Transition<Context>(base: "Default", target: "Other", condition: { _ in false })
+                    ],
+                    "Other" : [
+                        Transition<Context>(base: "Other", target: "Default", condition: { _ in false }),
+                        Transition<Context>(base: "Other", target: "Other2", condition: { _ in true })
                     ],
                 ],
                 entryId: "Default"

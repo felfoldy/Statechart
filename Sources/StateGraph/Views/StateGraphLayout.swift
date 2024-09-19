@@ -7,29 +7,22 @@
 
 import SwiftUI
 
-enum AnchorType: CaseIterable {
-    case top, bottom, left, right
-}
-
-struct NodeAnchorDescription {
-    let name: String
-    let anchor: AnchorType
+struct TransitionDescription: Identifiable {
+    enum AnchorUnit {
+        case top, bottom, left, right
+    }
     
-    func anchor(in rect: CGRect) -> CGPoint {
-        switch anchor {
-        case .top: CGPoint(x: rect.midX, y: rect.minY)
-        case .bottom: CGPoint(x: rect.midX, y: rect.maxY)
-        case .left: CGPoint(x: rect.minX, y: rect.midY)
-        case .right: CGPoint(x: rect.maxX, y: rect.midY)
+    var id: String { "\(base) -> \(target)" }
+    
+    var base: String
+    var target: String
+    private(set) var anchor: AnchorUnit?
+    
+    mutating func anchored(to anchor: AnchorUnit) {
+        if self.anchor != anchor {
+            self.anchor = anchor
         }
     }
-}
-
-struct TransitionDescription: Identifiable {
-    var id: Set<String> { [base.name, target.name] }
-    
-    var base: NodeAnchorDescription
-    var target: NodeAnchorDescription
 }
 
 struct StateGraphLayoutDescription<Context> {
@@ -73,14 +66,12 @@ extension StateGraphLayoutDescription {
             .mapValues { values in
                 CGPoint(x: values[0].x, y: 0)
             }
-        
+
         let transitions = graph.transitions.values
             .flatMap { $0 }
             .map { transition in
-                TransitionDescription(
-                    base: NodeAnchorDescription(name: transition.base, anchor: .right),
-                    target: NodeAnchorDescription(name: transition.target, anchor: .left)
-                )
+                TransitionDescription(base: transition.base,
+                                      target: transition.target)
             }
 
         return .init(offsets: offsets, transitions: transitions)
@@ -107,9 +98,9 @@ struct StateGraphLayout<Context>: Layout {
                       let offset = description.offsets[id] else {
                     return nil
                 }
-                
+
                 let size = view.sizeThatFits(.infinity)
-                
+
                 return CGRect(origin: offset, size: size)
             }
             .reduce(CGRect.zero) { result, rect in
@@ -124,10 +115,10 @@ struct StateGraphLayout<Context>: Layout {
                   let offset = description.offsets[id] else {
                 continue
             }
-            
+
             let newOffset = CGPoint(x: bounds.minX + offset.x,
                                     y: bounds.minY + offset.y)
-            
+
             view.place(at: newOffset, proposal: proposal)
         }
     }
