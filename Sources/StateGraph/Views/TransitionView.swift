@@ -34,7 +34,7 @@ struct TransitionView: View {
                     let point2 = isRect1Above ? rect2.top : rect2.bottom
                     
                     VerticalEdgeShape(point1: point1, point2: point2)
-                        .stroke(.link, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
+                        .stroke(.selection, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
                         .task(id: UUID()) {
                             transition.anchored(to: isRect1Above ? .top : .bottom)
                         }
@@ -45,7 +45,7 @@ struct TransitionView: View {
                     let point2 = isRect1Left ? rect2.left : rect2.right
                     
                     HorizontalEdgeShape(point1: point1, point2: point2)
-                        .stroke(.link, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
+                        .stroke(.selection, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
                         .task(id: UUID()) {
                             transition.anchored(to: isRect1Left ? .left : .right)
                         }

@@ -15,13 +15,6 @@ public struct State<Context> {
     public var exit: (Context) -> Void
 }
 
-public struct Transition<Context> {
-    public var base: State<Context>.ID
-    public var target: State<Context>.ID
-    
-    public var condition: (Context) -> Bool
-}
-
 extension State: Identifiable {
     public var id: String { name }
     

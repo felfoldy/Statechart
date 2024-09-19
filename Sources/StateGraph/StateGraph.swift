@@ -58,8 +58,8 @@ class StateGraph<Context> {
         activeState.enter(context)
     }
     
-    func update(_ context: Context) {
-        if let nextId = nextState(context) {
+    func update(_ context: inout Context) {
+        if let nextId = nextState(&context) {
             // Check if the state exists.
             guard let next = states[nextId] else {
                 log.fault("Missing state: \(nextId).")
@@ -82,7 +82,7 @@ class StateGraph<Context> {
         activeState.exit(context)
     }
     
-    private func nextState(_ context: Context) -> Node.ID? {
+    private func nextState(_ context: inout Context) -> Node.ID? {
         var visited: Set<Node.ID> = []
         var currentId: Node.ID = activeState.id
 
@@ -101,7 +101,7 @@ class StateGraph<Context> {
             }
             
             // Check conditions.
-            for transition in transitions where transition.condition(context) {
+            for transition in transitions where transition.condition(&context) {
                 log.trace("Transition from [\(currentId)] to [\(transition.target)]")
 
                 visited.insert(currentId)

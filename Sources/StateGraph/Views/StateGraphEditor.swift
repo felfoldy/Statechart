@@ -42,6 +42,7 @@ struct StateGraphEditor<Context, NodeContent: View>: View {
                 }
             }
             .environment(\.activeStateId, graph.activeState.id)
+            .animation(.bouncy, value: graph.activeState.id)
             .padding(40)
             .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
                 ForEach($model.layout.transitions) { transition in
@@ -99,7 +100,7 @@ struct StateView<Context, NodeContent: View>: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
-                .foregroundStyle(.link)
+                .foregroundStyle(.selection)
             }
             // Move stateView.
             .offset(translation)
@@ -122,7 +123,17 @@ struct StateView<Context, NodeContent: View>: View {
 }
 
 #Preview {
-    struct Context {}
+    struct Context {
+        var selectable: String
+        
+        struct Condition: TransitionCondition {
+            let target: String
+            
+            func evaluate(context: inout Context) -> Bool {
+                context.selectable == target
+            }
+        }
+    }
     
     class DrawableStateGraph: StateGraph<Context> {
         init?() {
@@ -135,12 +146,17 @@ struct StateView<Context, NodeContent: View>: View {
                 ],
                 transitions: [
                     "Default" : [
-                        Transition<Context>(base: "Default", target: "Other", condition: { _ in false })
+                        Transition("Default", "Other", condition: Context.Condition(target: "Other"))
                     ],
                     "Other" : [
-                        Transition<Context>(base: "Other", target: "Default", condition: { _ in false }),
-                        Transition<Context>(base: "Other", target: "Other2", condition: { _ in true })
+                        Transition("Other", "Default", condition: .constant(false)),
+                        Transition("Other", "Other2", condition: .constant(true)),
                     ],
+                    "Other2" : [
+                        Transition("Other2", "Default") { context in
+                            context.selectable == "Default"
+                        }
+                    ]
                 ],
                 entryId: "Default"
             )
@@ -152,11 +168,12 @@ struct StateView<Context, NodeContent: View>: View {
         
         StateGraphEditor(graph: graph) { state in
             Button(state.name) {
-                
+                var context = Context(selectable: state.name)
+                graph.update(&context)
             }
             .buttonStyle(.stateNode)
         }
-        .background(.gray.opacity(0.5))
+        .background(.gray.opacity(0.8))
         .navigationTitle(graph.name)
     }
 }
