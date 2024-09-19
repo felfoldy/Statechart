@@ -1,6 +1,6 @@
 //
 //  StateView.swift
-//  StateGraph
+//  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-19.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StateView<Context, NodeContent: View>: View {
-    @Binding var layout: StateGraphLayoutDescription
+    @Binding var layout: StatechartLayoutDescription
     
     let state: State<Context>
     let stateView: (State<Context>) -> NodeContent

@@ -1,6 +1,6 @@
 //
 //  State.swift
-//  StateGraph
+//  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-14.
 //

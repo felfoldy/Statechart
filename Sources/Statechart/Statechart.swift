@@ -1,6 +1,6 @@
 //
-//  StateGraph.swift
-//  StateGraph
+//  Statechart.swift
+//  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-14.
 //
@@ -9,13 +9,13 @@ import Foundation
 import LogTools
 
 @Observable
-class StateGraph<Context> {
+class Statechart<Context> {
     typealias Node = State<Context>
     typealias Edge = Transition<Context>
     
     var name: String
     
-    /// All states in the state graph.
+    /// All states in the state chart.
     var states: [Node.ID : Node]
     
     var transitions: [Node.ID : [Edge]]
@@ -43,7 +43,7 @@ class StateGraph<Context> {
         self.transitions = transitions
         self.entryId = entryId
         activeState = entry
-        log = Logger(subsystem: "com.felfoldy.StateGraph", category: name)
+        log = Logger(subsystem: "com.felfoldy.Statechart", category: name)
     }
     
     func enter(_ context: Context) {
@@ -52,7 +52,7 @@ class StateGraph<Context> {
             assertionFailure("Missing entry state.")
             return
         }
-        log.trace("Enter graph: [\(name)] with state: [\(state.name)]")
+        log.trace("Enter statechart: [\(name)] with state: [\(state.name)]")
         
         activeState = state
         activeState.enter(context)
@@ -78,7 +78,7 @@ class StateGraph<Context> {
     }
     
     func exit(_ context: Context) {
-        log.trace("Exit graph: [\(name)]")
+        log.trace("Exit statechart: [\(name)]")
         activeState.exit(context)
     }
     

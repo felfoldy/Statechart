@@ -1,6 +1,6 @@
 //
-//  StateGraphLayout.swift
-//  StateGraph
+//  StatechartLayout.swift
+//  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-14.
 //
@@ -25,11 +25,11 @@ struct TransitionDescription: Identifiable {
     }
 }
 
-struct StateGraphLayoutDescription {
+struct StatechartLayoutDescription {
     var offsets: [String : CGPoint]
     var transitions: [TransitionDescription]
 
-    init<Context>(offsets: [String : CGPoint], chart: StateGraph<Context>) {
+    init<Context>(offsets: [String : CGPoint], chart: Statechart<Context>) {
         self.offsets = offsets
         self.transitions = chart.transitions.values
             .flatMap { $0 }
@@ -58,10 +58,10 @@ struct StateGraphLayoutDescription {
     }
 }
 
-extension StateGraphLayoutDescription {
-    static func stack<Context>(graph: StateGraph<Context>,
+extension StatechartLayoutDescription {
+    static func stack<Context>(chart: Statechart<Context>,
                                spacing: CGFloat = 200) -> Self {
-        let mappedOffsets = graph.states.keys
+        let mappedOffsets = chart.states.keys
             .sorted(by: <)
             .enumerated()
             .map { index, value in
@@ -73,7 +73,7 @@ extension StateGraphLayoutDescription {
                 CGPoint(x: values[0].x, y: 0)
             }
 
-        return .init(offsets: offsets, chart: graph)
+        return .init(offsets: offsets, chart: chart)
     }
 }
 
@@ -87,8 +87,8 @@ extension View {
     }
 }
 
-struct StateGraphLayout: Layout {
-    @Binding var description: StateGraphLayoutDescription
+struct StatechartLayout: Layout {
+    @Binding var description: StatechartLayoutDescription
     
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         subviews

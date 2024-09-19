@@ -1,6 +1,6 @@
 //
-//  StateEditor.swift
-//  StateGraph
+//  StatechartEditor.swift
+//  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-14.
 //
@@ -8,41 +8,41 @@
 import SwiftUI
 
 @Observable
-class StateGraphEditorModel<Context> {
-    var graph: StateGraph<Context>
-    var layout: StateGraphLayoutDescription
+class StatechartEditorModel<Context> {
+    var chart: Statechart<Context>
+    var layout: StatechartLayoutDescription
     var anchorTranslation: (String, CGPoint)?
     
-    init(graph: StateGraph<Context>) {
-        self.graph = graph
-        layout = .stack(graph: graph)
+    init(chart: Statechart<Context>) {
+        self.chart = chart
+        layout = .stack(chart: chart)
     }
 }
 
-struct StateGraphEditor<Context, NodeContent: View>: View {
-    @SwiftUI.State var model: StateGraphEditorModel<Context>
+struct StatechartEditor<Context, NodeContent: View>: View {
+    @SwiftUI.State var model: StatechartEditorModel<Context>
     let stateView: (State<Context>) -> NodeContent
     
-    var graph: StateGraph<Context> { model.graph }
+    var chart: Statechart<Context> { model.chart }
     
     var nodes: [State<Context>] {
-        graph.states.values.sorted(by: { $0.name < $1.name })
+        chart.states.values.sorted(by: { $0.name < $1.name })
     }
     
-    init(model: StateGraphEditorModel<Context>, @ViewBuilder stateView: @escaping (State<Context>) -> NodeContent) {
+    init(model: StatechartEditorModel<Context>, @ViewBuilder stateView: @escaping (State<Context>) -> NodeContent) {
         _model = .init(initialValue: model)
         self.stateView = stateView
     }
     
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
-            StateGraphLayout(description: $model.layout) {
+            StatechartLayout(description: $model.layout) {
                 ForEach(nodes) { state in
                     StateView(layout: $model.layout, state: state, stateView: stateView)
                 }
             }
-            .environment(\.activeStateId, graph.activeState.id)
-            .animation(.bouncy, value: graph.activeState.id)
+            .environment(\.activeStateId, chart.activeState.id)
+            .animation(.bouncy, value: chart.activeState.id)
             .padding(40)
             .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
                 ForEach($model.layout.transitions) { transition in
@@ -53,10 +53,10 @@ struct StateGraphEditor<Context, NodeContent: View>: View {
     }
 }
 
-extension StateGraphEditor {
-    init(graph: StateGraph<Context>,
+extension StatechartEditor {
+    init(chart: Statechart<Context>,
          @ViewBuilder stateView: @escaping (State<Context>) -> NodeContent) {
-        self.init(model: .init(graph: graph), stateView: stateView)
+        self.init(model: .init(chart: chart), stateView: stateView)
     }
 }
 
@@ -73,10 +73,10 @@ extension StateGraphEditor {
         }
     }
     
-    class DrawableStateGraph: StateGraph<Context> {
+    class PreviewStatechart: Statechart<Context> {
         init?() {
             super.init(
-                name: "Graph",
+                name: "Chart",
                 states: [
                     .empty("Default"),
                     .empty("Other"),
@@ -102,16 +102,16 @@ extension StateGraphEditor {
     }
     
     return NavigationStack {
-        let graph = DrawableStateGraph()!
+        let chart = PreviewStatechart()!
         
-        StateGraphEditor(graph: graph) { state in
+        StatechartEditor(chart: chart) { state in
             Button(state.name) {
                 var context = Context(selectable: state.name)
-                graph.update(&context)
+                chart.update(&context)
             }
             .buttonStyle(.stateNode)
         }
         .background(.gray.opacity(0.8))
-        .navigationTitle(graph.name)
+        .navigationTitle(chart.name)
     }
 }
