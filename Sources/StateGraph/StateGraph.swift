@@ -106,6 +106,7 @@ class StateGraph<Context> {
 
                 visited.insert(currentId)
                 currentId = transition.target
+                NotificationCenter.default.postStateTransition(transition)
                 continue checkLoop
             }
             

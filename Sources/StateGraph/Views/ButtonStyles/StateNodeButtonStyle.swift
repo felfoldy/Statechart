@@ -30,6 +30,7 @@ struct StateNodeButtonStyle: ButtonStyle {
                         .stroke(isTranslating ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange.gradient), lineWidth: 4)
                 }
             }
+            .animation(.default, value: activeStateId == stateId)
             .opacity(configuration.isPressed ? 0.7 : 1)
             .onHover { isHovered in
                 self.isHovered = isHovered

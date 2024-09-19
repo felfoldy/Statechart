@@ -11,12 +11,18 @@ struct TransitionView: View {
     @Binding var transition: TransitionDescription
     let anchors: [String : Anchor<CGRect>]
 
+    @SwiftUI.State var isAnimating = false
+    
     private var baseAnchor: Anchor<CGRect>? {
         anchors[transition.base]
     }
     
     private var targetAnchor: Anchor<CGRect>? {
         anchors[transition.target]
+    }
+    
+    private var strokeShape: AnyShapeStyle {
+        isAnimating ? AnyShapeStyle(.link) : AnyShapeStyle(.selection)
     }
     
     var body: some View {
@@ -34,7 +40,7 @@ struct TransitionView: View {
                     let point2 = isRect1Above ? rect2.top : rect2.bottom
                     
                     VerticalEdgeShape(point1: point1, point2: point2)
-                        .stroke(.selection, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
+                        .stroke(strokeShape, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
                         .task(id: UUID()) {
                             transition.anchored(to: isRect1Above ? .top : .bottom)
                         }
@@ -45,7 +51,8 @@ struct TransitionView: View {
                     let point2 = isRect1Left ? rect2.left : rect2.right
                     
                     HorizontalEdgeShape(point1: point1, point2: point2)
-                        .stroke(.selection, style: StrokeStyle(lineWidth: 4, lineJoin: .round))
+                        .stroke(strokeShape,
+                                style: StrokeStyle(lineWidth: 4, lineJoin: .round))
                         .task(id: UUID()) {
                             transition.anchored(to: isRect1Left ? .left : .right)
                         }
@@ -54,6 +61,23 @@ struct TransitionView: View {
         }
         .animation(.linear, value: baseAnchor)
         .animation(.linear, value: targetAnchor)
+        .onReceive(
+            NotificationCenter.default
+                .stateTransitionPublisher()
+        ) { base, target in
+            guard base == transition.base,
+                  target == transition.target else {
+                return
+            }
+
+            withAnimation(.interactiveSpring) {
+                isAnimating = true
+            }
+
+            withAnimation(.easeOut.delay(0.5)) {
+                isAnimating = false
+            }
+        }
     }
 }
 

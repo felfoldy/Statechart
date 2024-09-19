@@ -60,68 +60,6 @@ extension StateGraphEditor {
     }
 }
 
-struct StateView<Context, NodeContent: View>: View {
-    @Binding var layout: StateGraphLayoutDescription<Context>
-    
-    let state: State<Context>
-    let stateView: (State<Context>) -> NodeContent
-    
-    @SwiftUI.State var translation: CGSize = .zero
-    
-    var body: some View {
-        stateView(state)
-            .setBoundsAnchor(for: state.id)
-            .background {
-                let anchors = layout.transitions
-                    .filter { $0.target == state.id }
-                    .compactMap(\.anchor)
-                
-                ForEach(Array(Set(anchors)), id: \.self) { anchor in
-                    switch anchor {
-                    case .top:
-                        Image(systemName: "arrowtriangle.down.fill")
-                            .font(.system(size: 16))
-                            .offset(x: 0, y: -12)
-                            .frame(maxHeight: .infinity, alignment: .top)
-                    case .bottom:
-                        Image(systemName: "arrowtriangle.up.fill")
-                            .font(.system(size: 16))
-                            .offset(x: 0, y: +12)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
-                    case .left:
-                        Image(systemName: "arrowtriangle.right.fill")
-                            .font(.system(size: 16))
-                            .offset(x: -12, y: 0)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    case .right:
-                        Image(systemName: "arrowtriangle.left.fill")
-                            .font(.system(size: 16))
-                            .offset(x: +12, y: 0)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
-                }
-                .foregroundStyle(.selection)
-            }
-            // Move stateView.
-            .offset(translation)
-            .highPriorityGesture(
-                DragGesture()
-                    .onChanged { value in
-                        translation = value.translation
-                    }
-                    .onEnded { value in
-                        withAnimation {
-                            translation = .zero
-                            layout.move(node: state.id, by: value.translation)
-                        }
-                    }
-            )
-            .layoutStateID(state.id)
-            .environment(\.stateId, state.id)
-            .environment(\.stateTranslation, translation != .zero)
-    }
-}
-
 #Preview {
     struct Context {
         var selectable: String
