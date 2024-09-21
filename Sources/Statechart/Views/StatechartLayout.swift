@@ -29,7 +29,7 @@ struct StatechartLayoutDescription {
     var offsets: [String : CGPoint]
     var transitions: [TransitionDescription]
 
-    init<Context>(offsets: [String : CGPoint], chart: Statechart<Context>) {
+    init<Context>(offsets: [String : CGPoint], chart: StateMachine<Context>) {
         self.offsets = offsets
         self.transitions = chart.transitions.values
             .flatMap { $0 }
@@ -59,7 +59,7 @@ struct StatechartLayoutDescription {
 }
 
 extension StatechartLayoutDescription {
-    static func stack<Context>(chart: Statechart<Context>,
+    static func stack<Context>(chart: StateMachine<Context>,
                                spacing: CGFloat = 200) -> Self {
         let mappedOffsets = chart.states.keys
             .sorted(by: <)

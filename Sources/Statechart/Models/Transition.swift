@@ -12,8 +12,8 @@ public protocol TransitionCondition {
 }
 
 public struct Transition<Context> {
-    public var base: State<Context>.ID
-    public var target: State<Context>.ID
+    public var base: AnyState<Context>.ID
+    public var target: AnyState<Context>.ID
     
     let condition: AnyTransitionCondition<Context>
     
@@ -54,8 +54,8 @@ public extension AnyTransitionCondition {
 
 public extension Transition {
     init<Condition: TransitionCondition>(
-        _ base: State<Context>.ID,
-        _ target: State<Context>.ID,
+        _ base: AnyState<Context>.ID,
+        _ target: AnyState<Context>.ID,
         condition: Condition
     ) where Context == Condition.Context {
         self.base = base
@@ -63,8 +63,8 @@ public extension Transition {
         self.condition = AnyTransitionCondition(condition)
     }
     
-    init(_ base: State<Context>.ID,
-         _ target: State<Context>.ID,
+    init(_ base: AnyState<Context>.ID,
+         _ target: AnyState<Context>.ID,
          _ condition: @escaping (inout Context) -> Bool) {
         self.base = base
         self.target = target

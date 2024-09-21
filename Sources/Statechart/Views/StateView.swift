@@ -10,8 +10,8 @@ import SwiftUI
 struct StateView<Context, NodeContent: View>: View {
     @Binding var layout: StatechartLayoutDescription
     
-    let state: State<Context>
-    let stateView: (State<Context>) -> NodeContent
+    let state: AnyState<Context>
+    let stateView: (AnyState<Context>) -> NodeContent
     
     @SwiftUI.State private var translation: CGSize = .zero
     

@@ -1,5 +1,5 @@
 //
-//  Statechart.swift
+//  StateMachine.swift
 //  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-14.
@@ -9,8 +9,8 @@ import Foundation
 import LogTools
 
 @Observable
-class Statechart<Context> {
-    typealias Node = State<Context>
+class StateMachine<Context>: MachineState {
+    typealias Node = AnyState<Context>
     typealias Edge = Transition<Context>
     
     var name: String
@@ -27,26 +27,26 @@ class Statechart<Context> {
 
     private let log: Logger
     
-    init?(name: String,
+    init(name: String,
           states: [Node],
           transitions: [Node.ID : [Edge]],
           entryId: Node.ID) {
-        let states = Dictionary(grouping: states, by: \.id)
+        var states = Dictionary(grouping: states, by: \.id)
             .compactMapValues(\.first)
 
-        guard let entry = states[entryId] else {
-            return nil
+        if states.isEmpty {
+            states["state"] = AnyState("state")
         }
 
         self.name = name
         self.states = states
         self.transitions = transitions
         self.entryId = entryId
-        activeState = entry
+        activeState = states[entryId] ?? states.values.first!
         log = Logger(subsystem: "com.felfoldy.Statechart", category: name)
     }
     
-    func enter(_ context: Context) {
+    func enter(context: inout Context) {
         guard let state = states[entryId] else {
             log.fault("Missing entry state: \(entryId).")
             assertionFailure("Missing entry state.")
@@ -55,10 +55,10 @@ class Statechart<Context> {
         log.trace("Enter statechart: [\(name)] with state: [\(state.name)]")
         
         activeState = state
-        activeState.enter(context)
+        activeState.enter(context: &context)
     }
     
-    func update(_ context: inout Context) {
+    func update(context: inout Context) {
         if let nextId = nextState(&context) {
             // Check if the state exists.
             guard let next = states[nextId] else {
@@ -69,17 +69,17 @@ class Statechart<Context> {
             
             // Update activeState.
             log.trace("Update active state: [\(activeState.name)] -> [\(next.name)]")
-            activeState.exit(context)
+            activeState.exit(context: &context)
             activeState = next
-            activeState.enter(context)
+            activeState.enter(context: &context)
         }
 
-        activeState.update(context)
+        activeState.update(context: &context)
     }
     
-    func exit(_ context: Context) {
+    func exit(context: inout Context) {
         log.trace("Exit statechart: [\(name)]")
-        activeState.exit(context)
+        activeState.exit(context: &context)
     }
     
     private func nextState(_ context: inout Context) -> Node.ID? {
