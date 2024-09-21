@@ -29,7 +29,7 @@ struct TransitionDescription: Identifiable {
 class StatechartViewModel<Context> {
     var stateMachine: StateMachine<Context>
     let spacing: CGFloat
-    var layout: StatechartLayoutCache?
+    var layout: StateMachineLayoutCache?
     var transitions: [TransitionDescription]
     
     init(stateMachine: StateMachine<Context>, spacing: CGFloat) {
@@ -53,7 +53,7 @@ struct StatechartView<Context, NodeContent: View>: View {
     var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
         
-        StatechartLayout(model: $model, layoutMaker: layoutMaker) {
+        StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states) { state in
                 stateView(state).modifier(
                     StateViewModifier(model: $model, state: state)
@@ -87,7 +87,7 @@ extension StatechartView {
         name: "Chart",
         states: [
             AnyState(
-                StateMachine(name: "ASubstates",
+                StateMachine(name: "Subgraph",
                              states: [.state("empty"), .state("other")],
                              transitions: [],
                              entryId: "empty")
@@ -110,7 +110,7 @@ extension StatechartView {
     
     return NavigationStack {
         ScrollView([.horizontal, .vertical]) {
-            StatechartView(stateMachine: stateMachine) { state in
+            StatechartView(stateMachine: stateMachine, spacing: 0) { state in
                 Button {
                     var context = Context(selectable: state.name)
                     stateMachine.update(context: &context)
@@ -119,7 +119,8 @@ extension StatechartView {
                         Text(state.name)
                         
                         if let stateMachine = state.stateMachine {
-                            StatechartView(stateMachine: stateMachine, spacing: 20) { state in
+                            StatechartView(stateMachine: stateMachine,
+                                           spacing: 20) { state in
                                 Button(state.name) {}
                                     .buttonStyle(.stateNode)
                             }
@@ -139,6 +140,7 @@ extension StatechartView {
                 stateMachine.enter(context: &context)
             }
             .padding()
+            .statechartLayout(.radial)
         }
         .background(.gray.opacity(0.8))
         .navigationTitle(stateMachine.name)

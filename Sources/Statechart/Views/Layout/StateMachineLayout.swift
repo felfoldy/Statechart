@@ -1,5 +1,5 @@
 //
-//  StatechartLayout.swift
+//  StateMachineLayout.swift
 //  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-14.
@@ -11,11 +11,11 @@ private struct NodeIdentifierValueKey: LayoutValueKey {
     static let defaultValue: String? = nil
 }
 
-struct StatechartLayout<Context>: Layout {
+struct StateMachineLayout<Context>: Layout {
     @Binding var model: StatechartViewModel<Context>
-    let layoutMaker: any StatechartLayoutMaker
+    let layoutMaker: any StateMachineLayoutMaker
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutCache) -> CGSize {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StateMachineLayoutCache) -> CGSize {
         subviews
             .compactMap { view -> CGRect? in
                 guard let id = view[NodeIdentifierValueKey.self],
@@ -31,7 +31,7 @@ struct StatechartLayout<Context>: Layout {
             .size
     }
     
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutCache) {
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout StateMachineLayoutCache) {
         for view in subviews {
             guard let id = view[NodeIdentifierValueKey.self],
                   let offset = cache.rects[id]?.origin else {
@@ -45,7 +45,7 @@ struct StatechartLayout<Context>: Layout {
         }
     }
     
-    func makeCache(subviews: Subviews) -> StatechartLayoutCache {
+    func makeCache(subviews: Subviews) -> StateMachineLayoutCache {
         if let cache = model.layout {
             return cache
         }

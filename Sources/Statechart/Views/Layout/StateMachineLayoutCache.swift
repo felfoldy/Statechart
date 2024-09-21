@@ -1,5 +1,5 @@
 //
-//  StatechartLayoutCache.swift
+//  StateMachineLayoutCache.swift
 //  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-21.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct StatechartLayoutCache {
+public struct StateMachineLayoutCache {
     var rects: [String : CGRect]
 
     init(rects: [String : CGRect]) {
@@ -20,8 +20,11 @@ public struct StatechartLayoutCache {
                                 y: oldOffset.y + translation.height)
         
         rects[node]?.origin = newOffset
-        
-        // Reposition the offsets to the top-left.
+        reposition()
+    }
+
+    /// Repositions to make the origin to top-left.
+    mutating func reposition() {
         let minX = rects.values.map(\.minX).min() ?? 0
         let minY = rects.values.map(\.minY).min() ?? 0
         
