@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StateView<Context, NodeContent: View>: View {
-    @Binding var layout: StatechartLayoutDescription
+    @Binding var model: StatechartEditorModel<Context>
     
     let state: AnyState<Context>
     let stateView: (AnyState<Context>) -> NodeContent
@@ -19,7 +19,7 @@ struct StateView<Context, NodeContent: View>: View {
         stateView(state)
             .setBoundsAnchor(for: state.id)
             .stateAnchorsView(stateId: state.id,
-                              transitions: layout.transitions)
+                              transitions: model.transitions)
             // StateView translation.
             .offset(translation)
             .highPriorityGesture(
@@ -30,7 +30,7 @@ struct StateView<Context, NodeContent: View>: View {
                     .onEnded { value in
                         withAnimation {
                             translation = .zero
-                            layout.move(node: state.id, by: value.translation)
+                            model.layout?.move(node: state.id, by: value.translation)
                         }
                     }
             )

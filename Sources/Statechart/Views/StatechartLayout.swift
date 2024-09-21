@@ -27,16 +27,9 @@ struct TransitionDescription: Identifiable {
 
 struct StatechartLayoutDescription {
     var offsets: [String : CGPoint]
-    var transitions: [TransitionDescription]
 
     init<Context>(offsets: [String : CGPoint], chart: StateMachine<Context>) {
         self.offsets = offsets
-        self.transitions = chart.transitions.values
-            .flatMap { $0 }
-            .map { transition in
-                TransitionDescription(base: transition.base,
-                                      target: transition.target)
-            }
     }
     
     mutating func move(node: String, by translation: CGSize) {
@@ -87,14 +80,15 @@ extension View {
     }
 }
 
-struct StatechartLayout: Layout {
-    @Binding var description: StatechartLayoutDescription
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+struct StatechartLayout<Context>: Layout {
+    let stateMachine: StateMachine<Context>
+    @Binding var description: StatechartLayoutDescription?
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutDescription) -> CGSize {
         subviews
             .compactMap { view -> CGRect? in
                 guard let id = view[NodeIdentifierValueKey.self],
-                      let offset = description.offsets[id] else {
+                      let offset = cache.offsets[id] else {
                     return nil
                 }
 
@@ -108,10 +102,10 @@ struct StatechartLayout: Layout {
             .size
     }
     
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutDescription) {
         for view in subviews {
             guard let id = view[NodeIdentifierValueKey.self],
-                  let offset = description.offsets[id] else {
+                  let offset = cache.offsets[id] else {
                 continue
             }
 
@@ -119,6 +113,16 @@ struct StatechartLayout: Layout {
                                     y: bounds.minY + offset.y)
 
             view.place(at: newOffset, proposal: proposal)
+        }
+    }
+    
+    func makeCache(subviews: Subviews) -> StatechartLayoutDescription {
+        if let layoutDescription = description {
+            return layoutDescription
+        } else {
+            let description = StatechartLayoutDescription.stack(chart: stateMachine)
+            self.description = description
+            return description
         }
     }
 }

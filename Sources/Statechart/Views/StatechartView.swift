@@ -10,11 +10,17 @@ import SwiftUI
 @Observable
 class StatechartEditorModel<Context> {
     var chart: StateMachine<Context>
-    var layout: StatechartLayoutDescription
+    var layout: StatechartLayoutDescription?
+    var transitions: [TransitionDescription]
     
     init(chart: StateMachine<Context>) {
         self.chart = chart
-        layout = .stack(chart: chart)
+        transitions = chart.transitions.values
+            .flatMap { $0 }
+            .map { transition in
+                TransitionDescription(base: transition.base,
+                                      target: transition.target)
+            }
     }
 }
 
@@ -34,15 +40,15 @@ struct StatechartView<Context, NodeContent: View>: View {
     }
     
     var body: some View {
-        StatechartLayout(description: $model.layout) {
+        StatechartLayout(stateMachine: chart, description: $model.layout) {
             ForEach(nodes) { state in
-                StateView(layout: $model.layout, state: state, stateView: stateView)
+                StateView(model: $model, state: state, stateView: stateView)
             }
         }
         .environment(\.activeStateId, chart.activeState.id)
         .animation(.bouncy, value: chart.activeState.id)
         .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
-            ForEach($model.layout.transitions) { transition in
+            ForEach($model.transitions) { transition in
                 TransitionView(transition: transition, anchors: anchors)
             }
         }

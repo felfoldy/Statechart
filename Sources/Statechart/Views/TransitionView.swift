@@ -11,7 +11,7 @@ struct TransitionView: View {
     @Binding var transition: TransitionDescription
     let anchors: [String : Anchor<CGRect>]
 
-    @SwiftUI.State var isAnimating = false
+    @State var isAnimating = false
     
     private var baseAnchor: Anchor<CGRect>? {
         anchors[transition.base]
