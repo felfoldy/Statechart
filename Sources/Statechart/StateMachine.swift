@@ -8,59 +8,51 @@
 import Foundation
 import LogTools
 
+private let log = Logger(subsystem: "com.felfoldy.Statechart", category: "StateMachine")
+
 @Observable
-class StateMachine<Context>: MachineState {
-    typealias Node = AnyState<Context>
-    typealias Edge = AnyTransition<Context>
-    
-    let name: String
-    
-    /// All states in the state chart.
-    var states: [Node.ID : Node]
-    
-    var transitions: [Node.ID : [Edge]]
-    
-    /// Index of the first state to become active.
-    var entryId: Node.ID
-    
-    var activeState: Node?
+public class StateMachine<Context>: MachineState {
+    public typealias State = AnyState<Context>
+    public typealias Transition = AnyTransition<Context>
 
-    private let log: Logger
+    public let name: String
+    public var states: StateCollection<Context>
+    public var transitions: [State.ID : [Transition]]
     
+    /// Name of the first state to become active on enter.
+    public var entryId: State.ID
+
+    public var activeState: State?
+        
     init(name: String,
-         states: [Node],
-         transitions: [Edge],
-         entryId: Node.ID) {
-        var states = Dictionary(grouping: states, by: \.id)
-            .compactMapValues(\.first)
-
-        if states.isEmpty {
-            states["state"] = AnyState("state")
-        }
+         states: [State],
+         transitions: [Transition],
+         entryId: State.ID) {
+        let states = states.isEmpty ? [.state("state")] : states
 
         self.name = name
-        self.states = states
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
         self.entryId = entryId
-        log = Logger(subsystem: "com.felfoldy.Statechart", category: name)
+        self.states = StateCollection(states)
     }
     
-    func enter(context: inout Context) {
+    public func enter(context: inout Context) {
         guard let state = states[entryId] else {
             log.fault("Missing entry state: \(entryId).")
             assertionFailure("Missing entry state.")
             return
         }
+        
         log.trace("Enter statechart: [\(name)] with state: [\(state.name)]")
         
         activeState = state
         activeState?.enter(context: &context)
     }
     
-    func update(context: inout Context) {
+    public func update(context: inout Context) {
         guard let state = activeState else { return }
         
-        if let nextId = nextState(from: state, &context) {
+        if let nextId = nextState(from: state.id, &context) {
             // Check if the state exists.
             guard let next = states[nextId] else {
                 log.fault("Missing state: \(nextId).")
@@ -78,41 +70,42 @@ class StateMachine<Context>: MachineState {
         activeState?.update(context: &context)
     }
     
-    func exit(context: inout Context) {
+    public func exit(context: inout Context) {
         log.trace("Exit statechart: [\(name)]")
         activeState?.exit(context: &context)
+        activeState = nil
     }
     
-    private func nextState(from activeState: Node, _ context: inout Context) -> Node.ID? {
-        var visited: Set<Node.ID> = []
-        var currentId: Node.ID = activeState.id
+    private func nextState(from activeStateID: State.ID, _ context: inout Context) -> State.ID? {
+        var visited: Set<State.ID> = []
+        var currentID: State.ID = activeStateID
 
         checkLoop: while true {
             // Check for infinite loop.
-            if visited.contains(currentId) {
-                log.fault("Infinite transition loop detected at [\(currentId)].")
+            if visited.contains(currentID) {
+                log.fault("Infinite transition loop detected at [\(currentID)].")
                 assertionFailure("Infinite transition loop.")
                 return nil
             }
 
             // Check for outgoing transitions.
-            guard let transitions = transitions[currentId], !transitions.isEmpty else {
-                log.error("There is no outgoing state from: \(currentId).")
-                return visited.isEmpty ? nil : currentId
+            guard let transitions = transitions[currentID], !transitions.isEmpty else {
+                log.error("There is no outgoing state from: \(currentID).")
+                return visited.isEmpty ? nil : currentID
             }
             
             // Check conditions.
             for transition in transitions where transition.condition(context: &context) {
-                log.trace("Transition from [\(currentId)] to [\(transition.targetId)]")
+                log.trace("Transition from [\(currentID)] to [\(transition.targetId)]")
 
-                visited.insert(currentId)
-                currentId = transition.targetId
+                visited.insert(currentID)
+                currentID = transition.targetId
                 NotificationCenter.default.postStateTransition(transition)
                 continue checkLoop
             }
             
             // If visited stays empty that means we found no transition.
-            return visited.isEmpty ? nil : currentId
+            return visited.isEmpty ? nil : currentID
         }
     }
 }

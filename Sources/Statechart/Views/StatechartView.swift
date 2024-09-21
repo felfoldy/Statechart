@@ -47,30 +47,21 @@ class StatechartViewModel<Context> {
 struct StatechartView<Context, NodeContent: View>: View {
     @State var model: StatechartViewModel<Context>
     let stateView: (AnyState<Context>) -> NodeContent
-    
-    var chart: StateMachine<Context> { model.stateMachine }
-    
-    var nodes: [AnyState<Context>] {
-        chart.states.values.sorted(by: { $0.name < $1.name })
-    }
 
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
-    init(model: StatechartViewModel<Context>, @ViewBuilder stateView: @escaping (AnyState<Context>) -> NodeContent) {
-        _model = .init(initialValue: model)
-        self.stateView = stateView
-    }
-    
     var body: some View {
+        let activeStateId = model.stateMachine.activeState?.id
+        
         StatechartLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(nodes) { state in
-                stateView(state)
-                    .modifier(StateViewModifier(model: $model,
-                                                state: state))
+            ForEach(model.stateMachine.states) { state in
+                stateView(state).modifier(
+                    StateViewModifier(model: $model, state: state)
+                )
             }
         }
-        .environment(\.activeStateId, chart.activeState?.id)
-        .animation(.bouncy, value: chart.activeState?.id)
+        .environment(\.activeStateId, activeStateId)
+        .animation(.bouncy, value: activeStateId)
         .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
             ForEach($model.transitions) { transition in
                 TransitionView(transition: transition, anchors: anchors)
