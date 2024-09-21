@@ -7,15 +7,35 @@
 
 import SwiftUI
 
+struct TransitionDescription: Identifiable {
+    enum AnchorUnit {
+        case top, bottom, left, right
+    }
+    
+    var id: String { "\(base) -> \(target)" }
+    
+    var base: String
+    var target: String
+    private(set) var anchor: AnchorUnit?
+    
+    mutating func anchored(to anchor: AnchorUnit) {
+        if self.anchor != anchor {
+            self.anchor = anchor
+        }
+    }
+}
+
 @Observable
 class StatechartEditorModel<Context> {
     var stateMachine: StateMachine<Context>
+    let spacing: CGFloat
     var layout: StatechartLayoutCache?
     var transitions: [TransitionDescription]
     
-    init(chart: StateMachine<Context>) {
-        self.stateMachine = chart
-        transitions = chart.transitions.values
+    init(stateMachine: StateMachine<Context>, spacing: CGFloat) {
+        self.stateMachine = stateMachine
+        self.spacing = spacing
+        transitions = stateMachine.transitions.values
             .flatMap { $0 }
             .map { transition in
                 TransitionDescription(base: transition.base,
@@ -25,7 +45,7 @@ class StatechartEditorModel<Context> {
 }
 
 struct StatechartView<Context, NodeContent: View>: View {
-    @SwiftUI.State var model: StatechartEditorModel<Context>
+    @State var model: StatechartEditorModel<Context>
     let stateView: (AnyState<Context>) -> NodeContent
     
     var chart: StateMachine<Context> { model.stateMachine }
@@ -33,6 +53,8 @@ struct StatechartView<Context, NodeContent: View>: View {
     var nodes: [AnyState<Context>] {
         chart.states.values.sorted(by: { $0.name < $1.name })
     }
+
+    @Environment(\.statechartLayoutMaker) private var layoutMaker
     
     init(model: StatechartEditorModel<Context>, @ViewBuilder stateView: @escaping (AnyState<Context>) -> NodeContent) {
         _model = .init(initialValue: model)
@@ -40,9 +62,11 @@ struct StatechartView<Context, NodeContent: View>: View {
     }
     
     var body: some View {
-        StatechartLayout(model: $model) {
+        StatechartLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(nodes) { state in
-                StateView(model: $model, state: state, stateView: stateView)
+                stateView(state)
+                    .modifier(StateViewModifier(model: $model,
+                                                state: state))
             }
         }
         .environment(\.activeStateId, chart.activeState.id)
@@ -56,9 +80,10 @@ struct StatechartView<Context, NodeContent: View>: View {
 }
 
 extension StatechartView {
-    init(chart: StateMachine<Context>,
+    init(stateMachine: StateMachine<Context>, spacing: CGFloat = 40,
          @ViewBuilder stateView: @escaping (AnyState<Context>) -> NodeContent) {
-        self.init(model: .init(chart: chart), stateView: stateView)
+        self.init(model: .init(stateMachine: stateMachine, spacing: spacing),
+                  stateView: stateView)
     }
 }
 
@@ -75,48 +100,48 @@ extension StatechartView {
         }
     }
     
+    let stateMachine = StateMachine<Context>(
+        name: "Chart",
+        states: [
+            AnyState(
+                StateMachine(name: "ASubstates",
+                             states: [.state("empty"), .state("other")],
+                             transitions: [:],
+                             entryId: "empty")
+            ),
+            
+            .state("Default"),
+            .state("Other"),
+            .state("Other2"),
+        ],
+        transitions: [
+            "Default" : [
+                Transition("Default", "Other", condition: Context.Condition(target: "Other")),
+                Transition("Default", "Other2", condition: Context.Condition(target: "Other2")),
+            ],
+            "Other" : [
+                Transition("Other", "Default", condition: Context.Condition(target: "Default")),
+                Transition("Other", "Other2", condition:.constant(true)),
+            ],
+            "Other2" : [
+                Transition("Other2", "Default", condition: Context.Condition(target: "Default")),
+            ],
+        ],
+        entryId: "Default"
+    )
+    
     return NavigationStack {
-        let chart = StateMachine<Context>(
-            name: "Chart",
-            states: [
-                AnyState(
-                    StateMachine(name: "ASubstates",
-                                 states: [.state("empty"), .state("other")],
-                                 transitions: [:],
-                                 entryId: "empty")
-                ),
-                
-                .state("Default"),
-                .state("Other"),
-                .state("Other2"),
-            ],
-            transitions: [
-                "Default" : [
-                    Transition("Default", "Other", condition: Context.Condition(target: "Other")),
-                    Transition("Default", "Other2", condition: Context.Condition(target: "Other2")),
-                ],
-                "Other" : [
-                    Transition("Other", "Default", condition: Context.Condition(target: "Default")),
-                    Transition("Other", "Other2", condition:.constant(true)),
-                ],
-                "Other2" : [
-                    Transition("Other2", "Default", condition: Context.Condition(target: "Default")),
-                ],
-            ],
-            entryId: "Default"
-        )
-
         ScrollView([.horizontal, .vertical]) {
-            StatechartView(chart: chart) { state in
+            StatechartView(stateMachine: stateMachine) { state in
                 Button {
                     var context = Context(selectable: state.name)
-                    chart.update(context: &context)
+                    stateMachine.update(context: &context)
                 } label: {
                     VStack {
                         Text(state.name)
                         
                         if let stateMachine = state.stateMachine {
-                            StatechartView(chart: stateMachine) { state in
+                            StatechartView(stateMachine: stateMachine, spacing: 20) { state in
                                 Button(state.name) {}
                                     .buttonStyle(.stateNode)
                             }
@@ -126,13 +151,15 @@ extension StatechartView {
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(.white.opacity(0.1))
                             }
+                            .statechartLayout(.stack(.vertical))
                         }
                     }
                 }
                 .buttonStyle(.stateNode)
-            }.padding()
+            }
+            .padding()
         }
         .background(.gray.opacity(0.8))
-        .navigationTitle(chart.name)
+        .navigationTitle(stateMachine.name)
     }
 }

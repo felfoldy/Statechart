@@ -1,5 +1,5 @@
 //
-//  StateView.swift
+//  StateViewModifier.swift
 //  Statechart
 //
 //  Created by Tibor Felföldy on 2024-09-19.
@@ -7,16 +7,17 @@
 
 import SwiftUI
 
-struct StateView<Context, NodeContent: View>: View {
+struct StateViewModifier<Context>: ViewModifier {
     @Binding var model: StatechartEditorModel<Context>
     let state: AnyState<Context>
-    let stateView: (AnyState<Context>) -> NodeContent
     
-    @SwiftUI.State private var translation: CGSize = .zero
+    @State private var translation: CGSize = .zero
     
-    var body: some View {
-        stateView(state)
+    func body(content: Content) -> some View {
+        content
+            // Sets anhor preference.
             .setBoundsAnchor(for: state.id)
+            // Add anchor arrows to the edges.
             .stateAnchorsView(stateId: state.id,
                               transitions: model.transitions)
             // StateView translation.
@@ -27,13 +28,17 @@ struct StateView<Context, NodeContent: View>: View {
                         translation = value.translation
                     }
                     .onEnded { value in
+                        // Update layout with the new translation.
                         withAnimation {
                             translation = .zero
-                            model.layout?.move(node: state.id, by: value.translation)
+                            model.layout?.move(node: state.id,
+                                               by: value.translation)
                         }
                     }
             )
+            // Add set id for layout.
             .layoutStateID(state.id)
+            // Set other environment values.
             .environment(\.stateId, state.id)
             .environment(\.stateTranslation, translation != .zero)
     }
