@@ -44,20 +44,28 @@ class StatechartViewModel<Context> {
     }
 }
 
-struct StatechartView<Context, NodeContent: View>: View {
+struct StatechartView<Context,
+                      StateContent: View,
+                      StateMachineContent: View>: View {
     @State var model: StatechartViewModel<Context>
-    let stateView: (AnyState<Context>) -> NodeContent
-
+    let stateView: (AnyState<Context>) -> StateContent
+    let stateMachineView: (StateMachine<Context>) -> StateMachineContent
+    
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
     var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
-        
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states) { state in
-                stateView(state).modifier(
-                    StateViewModifier(model: $model, state: state)
-                )
+                if let stateMachine = state.stateMachine, StateMachineContent.self != EmptyView.self {
+                    stateMachineView(stateMachine).modifier(
+                        StateViewModifier(model: $model, state: state)
+                    )
+                } else {
+                    stateView(state).modifier(
+                        StateViewModifier(model: $model, state: state)
+                    )
+                }
             }
         }
         .environment(\.activeStateId, activeStateId)
@@ -71,18 +79,39 @@ struct StatechartView<Context, NodeContent: View>: View {
 }
 
 extension StatechartView {
-    init(stateMachine: StateMachine<Context>, spacing: CGFloat = 40,
-         @ViewBuilder stateView: @escaping (AnyState<Context>) -> NodeContent) {
-        self.init(model: .init(stateMachine: stateMachine, spacing: spacing),
-                  stateView: stateView)
+    init(
+        stateMachine: StateMachine<Context>,
+        spacing: CGFloat = 40,
+        @ViewBuilder stateView: @escaping (AnyState<Context>) -> StateContent,
+        @ViewBuilder subStateMachine: @escaping (StateMachine<Context>) -> StateMachineContent
+    ) {
+        self.init(
+            model: .init(stateMachine: stateMachine, spacing: spacing),
+            stateView: stateView,
+            stateMachineView: subStateMachine
+        )
     }
 }
 
-#Preview {
-    struct Context {
-        var selectable: String?
+extension StatechartView where StateMachineContent == EmptyView {
+    init(
+        stateMachine: StateMachine<Context>,
+        spacing: CGFloat = 40,
+        @ViewBuilder stateView: @escaping (AnyState<Context>) -> StateContent
+    ) {
+        self.init(
+            model: .init(stateMachine: stateMachine, spacing: spacing),
+            stateView: stateView,
+            stateMachineView: { _ in EmptyView() }
+        )
     }
+}
 
+struct Context {
+    var selectable: String?
+}
+
+#Preview {
     let stateMachine = StateMachine<Context>(
         name: "Chart",
         states: [
@@ -93,7 +122,7 @@ extension StatechartView {
                              entryId: "empty")
             ),
             
-            .state("Default"),
+                .state("Default"),
             .state("Other"),
             .state("Other2"),
         ],
@@ -110,37 +139,23 @@ extension StatechartView {
     
     return NavigationStack {
         ScrollView([.horizontal, .vertical]) {
-            StatechartView(stateMachine: stateMachine, spacing: 0) { state in
-                Button {
+            StatechartView(stateMachine: stateMachine, spacing: 20) { state in
+                Button(state.name) {
                     var context = Context(selectable: state.name)
                     stateMachine.update(context: &context)
-                } label: {
-                    VStack {
-                        Text(state.name)
-                        
-                        if let stateMachine = state.stateMachine {
-                            StatechartView(stateMachine: stateMachine,
-                                           spacing: 20) { state in
-                                Button(state.name) {}
-                                    .buttonStyle(.stateNode)
-                            }
-                            .disabled(true)
-                            .padding(8)
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(.white.opacity(0.1))
-                            }
-                            .statechartLayout(.stack(.vertical))
-                        }
-                    }
                 }
-                .buttonStyle(.stateNode)
+            } subStateMachine: { stateMachine in
+                Button {
+                    
+                } label: {
+                    SubStateMachineView(stateMachine: stateMachine)
+                }
             }
             .onAppear {
                 stateMachine.enter(context: &context)
             }
             .padding()
-            .statechartLayout(.radial)
+            .buttonStyle(.stateNode)
         }
         .background(.gray.opacity(0.8))
         .navigationTitle(stateMachine.name)

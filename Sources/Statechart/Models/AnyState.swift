@@ -38,7 +38,7 @@ public struct AnyState<Context>: MachineState {
         self.exitFunction = state.exit
         stateMachine = state as? StateMachine<Context>
     }
-    
+
     public init(_ name: String,
                 enter: StateFunction<Context>? = nil,
                 update: StateFunction<Context>? = nil,

@@ -9,7 +9,7 @@ import SwiftUI
 
 @MainActor
 struct StatechartLayoutMakerEnvironmentKey: @preconcurrency EnvironmentKey {
-    static let defaultValue: any StateMachineLayoutMaker = .stack(.horizontal)
+    static let defaultValue: any StateMachineLayoutMaker = .radial
 }
 
 extension EnvironmentValues {

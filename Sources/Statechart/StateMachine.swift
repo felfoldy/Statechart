@@ -11,7 +11,7 @@ import LogTools
 private let log = Logger(subsystem: "com.felfoldy.Statechart", category: "StateMachine")
 
 @Observable
-public class StateMachine<Context>: MachineState {
+open class StateMachine<Context>: MachineState {
     public typealias State = AnyState<Context>
     public typealias Transition = AnyTransition<Context>
 
@@ -24,19 +24,19 @@ public class StateMachine<Context>: MachineState {
 
     public var activeState: State?
         
-    init(name: String,
-         states: [State],
-         transitions: [Transition],
-         entryId: State.ID) {
+    public init(name: String,
+                states: [State],
+                transitions: [Transition],
+                entryId: State.ID) {
         let states = states.isEmpty ? [.state("state")] : states
-
+        
         self.name = name
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
         self.entryId = entryId
         self.states = StateCollection(states)
     }
     
-    public func enter(context: inout Context) {
+    open func enter(context: inout Context) {
         guard let state = states[entryId] else {
             log.fault("Missing entry state: \(entryId).")
             assertionFailure("Missing entry state.")
@@ -49,7 +49,7 @@ public class StateMachine<Context>: MachineState {
         activeState?.enter(context: &context)
     }
     
-    public func update(context: inout Context) {
+    open func update(context: inout Context) {
         guard let state = activeState else { return }
         
         if let nextId = nextState(from: state.id, &context) {
@@ -60,17 +60,17 @@ public class StateMachine<Context>: MachineState {
                 return
             }
             
-            // Update activeState.
+            // Update the active state.
             log.trace("Update active state: [\(state.name)] -> [\(next.name)]")
             state.exit(context: &context)
+            next.enter(context: &context)
             activeState = next
-            activeState?.enter(context: &context)
         }
 
         activeState?.update(context: &context)
     }
     
-    public func exit(context: inout Context) {
+    open func exit(context: inout Context) {
         log.trace("Exit statechart: [\(name)]")
         activeState?.exit(context: &context)
         activeState = nil

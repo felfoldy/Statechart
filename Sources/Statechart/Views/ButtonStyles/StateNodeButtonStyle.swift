@@ -13,39 +13,20 @@ struct StateNodeButtonStyle: ButtonStyle {
     @Environment(\.activeStateId) private var activeStateId
     @Environment(\.stateTranslation) private var isTranslating
     
-    @SwiftUI.State private var isHovered = false
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding()
-            .background {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isHovered ? AnyShapeStyle(.selection) : AnyShapeStyle(.thinMaterial))
-                    .shadow(radius: 4, y: 2)
-            }
-            .opacity(isTranslating ? 0.1 : 1)
-            .overlay {
-                if activeStateId == stateId || isTranslating {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isTranslating ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange.gradient), lineWidth: 4)
-                }
-            }
-            .animation(.default, value: activeStateId == stateId)
-            .opacity(configuration.isPressed ? 0.7 : 1)
-            .onHover { isHovered in
-                self.isHovered = isHovered
-            }
+    @State private var isHovered = false
+    
+    private var backgroundStyle: AnyShapeStyle {
+        isHovered ? AnyShapeStyle(.selection) : AnyShapeStyle(.thinMaterial)
     }
-}
 
-struct SelectableStateNodeToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
-        Button {
-            configuration.isOn = true
-        } label: {
+        StateView(backgroundStyle: backgroundStyle) {
             configuration.label
         }
-        .buttonStyle(.stateNode)
+        .opacity(configuration.isPressed ? 0.7 : 1)
+        .onHover { isHovered in
+            self.isHovered = isHovered
+        }
     }
 }
 
