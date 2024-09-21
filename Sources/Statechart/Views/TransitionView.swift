@@ -65,7 +65,9 @@ struct TransitionView: View {
             NotificationCenter.default
                 .stateTransitionPublisher()
         ) { base, target in
-            guard transition.id == [base, target] else {
+            let directions = Set([base, target])
+            guard directions.contains(transition.base),
+                  directions.contains(transition.target) else {
                 return
             }
 
