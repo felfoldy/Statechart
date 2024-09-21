@@ -12,7 +12,7 @@ private struct NodeIdentifierValueKey: LayoutValueKey {
 }
 
 struct StatechartLayout<Context>: Layout {
-    @Binding var model: StatechartEditorModel<Context>
+    @Binding var model: StatechartViewModel<Context>
     let layoutMaker: any StatechartLayoutMaker
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutCache) -> CGSize {

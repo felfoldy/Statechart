@@ -23,7 +23,7 @@ class StateMachine<Context>: MachineState {
     /// Index of the first state to become active.
     var entryId: Node.ID
     
-    var activeState: Node
+    var activeState: Node?
 
     private let log: Logger
     
@@ -42,7 +42,6 @@ class StateMachine<Context>: MachineState {
         self.states = states
         self.transitions = transitions
         self.entryId = entryId
-        activeState = states[entryId] ?? states.values.first!
         log = Logger(subsystem: "com.felfoldy.Statechart", category: name)
     }
     
@@ -55,11 +54,13 @@ class StateMachine<Context>: MachineState {
         log.trace("Enter statechart: [\(name)] with state: [\(state.name)]")
         
         activeState = state
-        activeState.enter(context: &context)
+        activeState?.enter(context: &context)
     }
     
     func update(context: inout Context) {
-        if let nextId = nextState(&context) {
+        guard let state = activeState else { return }
+        
+        if let nextId = nextState(from: state, &context) {
             // Check if the state exists.
             guard let next = states[nextId] else {
                 log.fault("Missing state: \(nextId).")
@@ -68,21 +69,21 @@ class StateMachine<Context>: MachineState {
             }
             
             // Update activeState.
-            log.trace("Update active state: [\(activeState.name)] -> [\(next.name)]")
-            activeState.exit(context: &context)
+            log.trace("Update active state: [\(state.name)] -> [\(next.name)]")
+            state.exit(context: &context)
             activeState = next
-            activeState.enter(context: &context)
+            activeState?.enter(context: &context)
         }
 
-        activeState.update(context: &context)
+        activeState?.update(context: &context)
     }
     
     func exit(context: inout Context) {
         log.trace("Exit statechart: [\(name)]")
-        activeState.exit(context: &context)
+        activeState?.exit(context: &context)
     }
     
-    private func nextState(_ context: inout Context) -> Node.ID? {
+    private func nextState(from activeState: Node, _ context: inout Context) -> Node.ID? {
         var visited: Set<Node.ID> = []
         var currentId: Node.ID = activeState.id
 

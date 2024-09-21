@@ -26,7 +26,7 @@ struct TransitionDescription: Identifiable {
 }
 
 @Observable
-class StatechartEditorModel<Context> {
+class StatechartViewModel<Context> {
     var stateMachine: StateMachine<Context>
     let spacing: CGFloat
     var layout: StatechartLayoutCache?
@@ -45,7 +45,7 @@ class StatechartEditorModel<Context> {
 }
 
 struct StatechartView<Context, NodeContent: View>: View {
-    @State var model: StatechartEditorModel<Context>
+    @State var model: StatechartViewModel<Context>
     let stateView: (AnyState<Context>) -> NodeContent
     
     var chart: StateMachine<Context> { model.stateMachine }
@@ -56,7 +56,7 @@ struct StatechartView<Context, NodeContent: View>: View {
 
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
-    init(model: StatechartEditorModel<Context>, @ViewBuilder stateView: @escaping (AnyState<Context>) -> NodeContent) {
+    init(model: StatechartViewModel<Context>, @ViewBuilder stateView: @escaping (AnyState<Context>) -> NodeContent) {
         _model = .init(initialValue: model)
         self.stateView = stateView
     }
@@ -69,8 +69,8 @@ struct StatechartView<Context, NodeContent: View>: View {
                                                 state: state))
             }
         }
-        .environment(\.activeStateId, chart.activeState.id)
-        .animation(.bouncy, value: chart.activeState.id)
+        .environment(\.activeStateId, chart.activeState?.id)
+        .animation(.bouncy, value: chart.activeState?.id)
         .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
             ForEach($model.transitions) { transition in
                 TransitionView(transition: transition, anchors: anchors)
@@ -89,7 +89,7 @@ extension StatechartView {
 
 #Preview {
     struct Context {
-        var selectable: String
+        var selectable: String?
         
         struct Condition: TransitionCondition {
             let target: String
@@ -121,7 +121,7 @@ extension StatechartView {
             ],
             "Other" : [
                 Transition("Other", "Default", condition: Context.Condition(target: "Default")),
-                Transition("Other", "Other2", condition:.constant(true)),
+                Transition("Other", "Other2", condition: .constant(true)),
             ],
             "Other2" : [
                 Transition("Other2", "Default", condition: Context.Condition(target: "Default")),
@@ -129,6 +129,8 @@ extension StatechartView {
         ],
         entryId: "Default"
     )
+    
+    var context = Context()
     
     return NavigationStack {
         ScrollView([.horizontal, .vertical]) {
@@ -156,6 +158,9 @@ extension StatechartView {
                     }
                 }
                 .buttonStyle(.stateNode)
+            }
+            .onAppear {
+                stateMachine.enter(context: &context)
             }
             .padding()
         }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StateViewModifier<Context>: ViewModifier {
-    @Binding var model: StatechartEditorModel<Context>
+    @Binding var model: StatechartViewModel<Context>
     let state: AnyState<Context>
     
     @State private var translation: CGSize = .zero
