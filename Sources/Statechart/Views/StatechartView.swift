@@ -9,12 +9,12 @@ import SwiftUI
 
 @Observable
 class StatechartEditorModel<Context> {
-    var chart: StateMachine<Context>
-    var layout: StatechartLayoutDescription?
+    var stateMachine: StateMachine<Context>
+    var layout: StatechartLayoutCache?
     var transitions: [TransitionDescription]
     
     init(chart: StateMachine<Context>) {
-        self.chart = chart
+        self.stateMachine = chart
         transitions = chart.transitions.values
             .flatMap { $0 }
             .map { transition in
@@ -28,7 +28,7 @@ struct StatechartView<Context, NodeContent: View>: View {
     @SwiftUI.State var model: StatechartEditorModel<Context>
     let stateView: (AnyState<Context>) -> NodeContent
     
-    var chart: StateMachine<Context> { model.chart }
+    var chart: StateMachine<Context> { model.stateMachine }
     
     var nodes: [AnyState<Context>] {
         chart.states.values.sorted(by: { $0.name < $1.name })
@@ -40,7 +40,7 @@ struct StatechartView<Context, NodeContent: View>: View {
     }
     
     var body: some View {
-        StatechartLayout(stateMachine: chart, description: $model.layout) {
+        StatechartLayout(model: $model) {
             ForEach(nodes) { state in
                 StateView(model: $model, state: state, stateView: stateView)
             }

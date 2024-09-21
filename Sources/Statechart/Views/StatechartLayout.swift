@@ -25,10 +25,10 @@ struct TransitionDescription: Identifiable {
     }
 }
 
-struct StatechartLayoutDescription {
+struct StatechartLayoutCache {
     var offsets: [String : CGPoint]
 
-    init<Context>(offsets: [String : CGPoint], chart: StateMachine<Context>) {
+    init(offsets: [String : CGPoint]) {
         self.offsets = offsets
     }
     
@@ -51,22 +51,28 @@ struct StatechartLayoutDescription {
     }
 }
 
-extension StatechartLayoutDescription {
-    static func stack<Context>(chart: StateMachine<Context>,
-                               spacing: CGFloat = 200) -> Self {
-        let mappedOffsets = chart.states.keys
-            .sorted(by: <)
-            .enumerated()
-            .map { index, value in
-                (name: value, x: CGFloat(index) * spacing)
-            }
+protocol StatechartLayoutMaker {
+    var stateDimensions: [(name: String, size: CGSize)] { get }
+    var spacing: CGFloat { get }
+    
+    func make() -> StatechartLayoutCache
+}
 
-        let offsets = Dictionary(grouping: mappedOffsets, by: \.name)
-            .mapValues { values in
-                CGPoint(x: values[0].x, y: 0)
-            }
+struct StackLayoutMaker: StatechartLayoutMaker {
+    let stateDimensions: [(name: String, size: CGSize)]
+    let spacing: CGFloat
+    
+    func make() -> StatechartLayoutCache {
+        var offsets = [String : CGPoint]()
+        
+        var offset: CGFloat = 0
+        
+        for (name, size) in stateDimensions {
+            offsets[name] = CGPoint(x: offset, y: 0)
+            offset += size.width + spacing
+        }
 
-        return .init(offsets: offsets, chart: chart)
+        return .init(offsets: offsets)
     }
 }
 
@@ -81,10 +87,9 @@ extension View {
 }
 
 struct StatechartLayout<Context>: Layout {
-    let stateMachine: StateMachine<Context>
-    @Binding var description: StatechartLayoutDescription?
+    @Binding var model: StatechartEditorModel<Context>
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutDescription) -> CGSize {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutCache) -> CGSize {
         subviews
             .compactMap { view -> CGRect? in
                 guard let id = view[NodeIdentifierValueKey.self],
@@ -102,7 +107,7 @@ struct StatechartLayout<Context>: Layout {
             .size
     }
     
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutDescription) {
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout StatechartLayoutCache) {
         for view in subviews {
             guard let id = view[NodeIdentifierValueKey.self],
                   let offset = cache.offsets[id] else {
@@ -116,13 +121,23 @@ struct StatechartLayout<Context>: Layout {
         }
     }
     
-    func makeCache(subviews: Subviews) -> StatechartLayoutDescription {
-        if let layoutDescription = description {
-            return layoutDescription
-        } else {
-            let description = StatechartLayoutDescription.stack(chart: stateMachine)
-            self.description = description
-            return description
+    func makeCache(subviews: Subviews) -> StatechartLayoutCache {
+        if let cache = model.layout {
+            return cache
         }
+
+        let stateDimensions = subviews.compactMap { view -> (String, CGSize)? in
+            guard let id = view[NodeIdentifierValueKey.self] else {
+                return nil
+            }
+            
+            let size = view.sizeThatFits(.unspecified)
+            return (id, size)
+        }
+        
+        let cache = StackLayoutMaker(stateDimensions: stateDimensions, spacing: 20)
+            .make()
+        model.layout = cache
+        return cache
     }
 }

@@ -9,7 +9,6 @@ import SwiftUI
 
 struct StateView<Context, NodeContent: View>: View {
     @Binding var model: StatechartEditorModel<Context>
-    
     let state: AnyState<Context>
     let stateView: (AnyState<Context>) -> NodeContent
     
