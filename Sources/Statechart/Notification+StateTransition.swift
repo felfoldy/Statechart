@@ -13,17 +13,17 @@ extension Notification.Name {
 }
 
 extension NotificationCenter {
-    func postStateTransition<Context>(_ transition: Transition<Context>) {
+    func postStateTransition(_ transition: any Transition) {
         post(name: .stateTransition, object: nil,
-             userInfo: ["base": transition.base,
-                        "target": transition.target])
+             userInfo: ["source": transition.sourceId,
+                        "target": transition.targetId])
     }
     
     func stateTransitionPublisher() -> AnyPublisher<(String, String), Never> {
         publisher(for: .stateTransition)
             .compactMap(\.userInfo)
             .compactMap { userInfo in
-                guard let base = userInfo["base"] as? String,
+                guard let base = userInfo["source"] as? String,
                       let target = userInfo["target"] as? String else {
                     return nil
                 }

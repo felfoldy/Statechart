@@ -35,11 +35,11 @@ class StatechartViewModel<Context> {
     init(stateMachine: StateMachine<Context>, spacing: CGFloat) {
         self.stateMachine = stateMachine
         self.spacing = spacing
-        transitions = stateMachine.transitions.values
-            .flatMap { $0 }
+        transitions = stateMachine.transitions
+            .flatMap(\.value)
             .map { transition in
-                TransitionDescription(base: transition.base,
-                                      target: transition.target)
+                TransitionDescription(base: transition.sourceId,
+                                      target: transition.targetId)
             }
     }
 }
@@ -90,23 +90,15 @@ extension StatechartView {
 #Preview {
     struct Context {
         var selectable: String?
-        
-        struct Condition: TransitionCondition {
-            let target: String
-            
-            func evaluate(context: inout Context) -> Bool {
-                context.selectable == target
-            }
-        }
     }
-    
+
     let stateMachine = StateMachine<Context>(
         name: "Chart",
         states: [
             AnyState(
                 StateMachine(name: "ASubstates",
                              states: [.state("empty"), .state("other")],
-                             transitions: [:],
+                             transitions: [],
                              entryId: "empty")
             ),
             
@@ -115,17 +107,10 @@ extension StatechartView {
             .state("Other2"),
         ],
         transitions: [
-            "Default" : [
-                Transition("Default", "Other", condition: Context.Condition(target: "Other")),
-                Transition("Default", "Other2", condition: Context.Condition(target: "Other2")),
-            ],
-            "Other" : [
-                Transition("Other", "Default", condition: Context.Condition(target: "Default")),
-                Transition("Other", "Other2", condition: .constant(true)),
-            ],
-            "Other2" : [
-                Transition("Other2", "Default", condition: Context.Condition(target: "Default")),
-            ],
+            .transition("Other", "Default", .constant(false)),
+            .transition("Default", "Other") { $0.selectable == "Other" },
+            .transition("Other2", "Default") { $0.selectable == "Default" },
+            .transition("Other", "Other2", .constant(true)),
         ],
         entryId: "Default"
     )

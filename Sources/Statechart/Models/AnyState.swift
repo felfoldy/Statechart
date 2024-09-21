@@ -13,7 +13,7 @@ public protocol MachineState: Identifiable {
     associatedtype Context
     
     var name: String { get }
-    
+
     func enter(context: inout Context)
     func update(context: inout Context)
     func exit(context: inout Context)

@@ -11,9 +11,9 @@ import LogTools
 @Observable
 class StateMachine<Context>: MachineState {
     typealias Node = AnyState<Context>
-    typealias Edge = Transition<Context>
+    typealias Edge = AnyTransition<Context>
     
-    var name: String
+    let name: String
     
     /// All states in the state chart.
     var states: [Node.ID : Node]
@@ -28,9 +28,9 @@ class StateMachine<Context>: MachineState {
     private let log: Logger
     
     init(name: String,
-          states: [Node],
-          transitions: [Node.ID : [Edge]],
-          entryId: Node.ID) {
+         states: [Node],
+         transitions: [Edge],
+         entryId: Node.ID) {
         var states = Dictionary(grouping: states, by: \.id)
             .compactMapValues(\.first)
 
@@ -40,7 +40,7 @@ class StateMachine<Context>: MachineState {
 
         self.name = name
         self.states = states
-        self.transitions = transitions
+        self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
         self.entryId = entryId
         log = Logger(subsystem: "com.felfoldy.Statechart", category: name)
     }
@@ -102,11 +102,11 @@ class StateMachine<Context>: MachineState {
             }
             
             // Check conditions.
-            for transition in transitions where transition.condition(&context) {
-                log.trace("Transition from [\(currentId)] to [\(transition.target)]")
+            for transition in transitions where transition.condition(context: &context) {
+                log.trace("Transition from [\(currentId)] to [\(transition.targetId)]")
 
                 visited.insert(currentId)
-                currentId = transition.target
+                currentId = transition.targetId
                 NotificationCenter.default.postStateTransition(transition)
                 continue checkLoop
             }

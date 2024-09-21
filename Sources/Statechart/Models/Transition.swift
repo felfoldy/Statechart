@@ -5,69 +5,59 @@
 //  Created by Tibor Felföldy on 2024-09-19.
 //
 
-public protocol TransitionCondition {
+public protocol Transition: Identifiable {
     associatedtype Context
 
-    func evaluate(context: inout Context) -> Bool
+    var sourceId: String { get }
+    var targetId: String { get }
+    
+    func condition(context: inout Context) -> Bool
 }
 
-public struct Transition<Context> {
-    public var base: AnyState<Context>.ID
-    public var target: AnyState<Context>.ID
-    
-    let condition: AnyTransitionCondition<Context>
-    
-    init(_ base: String, _ target: String,
-         condition: AnyTransitionCondition<Context>) {
-        self.base = base
-        self.target = target
-        self.condition = condition
-    }
-    
-    public func condition(_ context: inout Context) -> Bool {
-        condition.evaluate(context: &context)
-    }
+extension Transition {
+    public var id: String { "\(sourceId)-\(targetId)" }
 }
 
-public struct AnyTransitionCondition<Context>: TransitionCondition {
-    private var _condition: (inout Context) -> Bool
-    
-    public init(condition: @escaping (inout Context) -> Bool) {
+public struct AnyTransition<Context>: Transition {
+    public let sourceId: String
+    public let targetId: String
+
+    private let _condition: (inout Context) -> Bool
+
+    public init(source: String, target: String,
+                _ condition: @escaping (inout Context) -> Bool) {
+        self.sourceId = source
+        self.targetId = target
         _condition = condition
     }
     
-    public init<Condition: TransitionCondition>(_ condition: Condition)
-    where Context == Condition.Context {
-        _condition = condition.evaluate
+    public init<T: Transition>(_ transition: T) where T.Context == Context {
+        self.sourceId = transition.sourceId
+        self.targetId = transition.targetId
+        _condition = transition.condition
     }
     
-    public func evaluate(context: inout Context) -> Bool {
+    public func condition(context: inout Context) -> Bool {
         _condition(&context)
     }
 }
 
-public extension AnyTransitionCondition {
-    static func constant(_ value: Bool) -> AnyTransitionCondition {
-        AnyTransitionCondition { _ in value }
-    }
-}
-
-public extension Transition {
-    init<Condition: TransitionCondition>(
-        _ base: AnyState<Context>.ID,
-        _ target: AnyState<Context>.ID,
-        condition: Condition
-    ) where Context == Condition.Context {
-        self.base = base
-        self.target = target
-        self.condition = AnyTransitionCondition(condition)
+extension AnyTransition {
+    enum ConditionType {
+        case constant(Bool)
+        
+        var function: (inout Context) -> Bool {
+            switch self {
+            case let .constant(value): { _ in value }
+            }
+        }
     }
     
-    init(_ base: AnyState<Context>.ID,
-         _ target: AnyState<Context>.ID,
-         _ condition: @escaping (inout Context) -> Bool) {
-        self.base = base
-        self.target = target
-        self.condition = AnyTransitionCondition(condition: condition)
+    static func transition(_ source: String, _ target: String, condition: @escaping (inout Context) -> Bool) -> AnyTransition {
+        AnyTransition(source: source, target: target, condition)
+    }
+    
+    static func transition(_ source: String, _ target: String, _ condition: ConditionType) -> AnyTransition {
+        AnyTransition(source: source, target: target, condition.function)
     }
 }

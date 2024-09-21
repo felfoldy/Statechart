@@ -65,8 +65,7 @@ struct TransitionView: View {
             NotificationCenter.default
                 .stateTransitionPublisher()
         ) { base, target in
-            guard base == transition.base,
-                  target == transition.target else {
+            guard transition.id == [base, target] else {
                 return
             }
 
