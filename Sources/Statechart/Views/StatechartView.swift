@@ -7,18 +7,18 @@
 
 import SwiftUI
 
+enum NodeAnchor {
+    case top, bottom, left, right
+}
+
 struct TransitionDescription: Identifiable {
-    enum AnchorUnit {
-        case top, bottom, left, right
-    }
-    
     var id: String { "\(base) -> \(target)" }
     
     var base: String
     var target: String
-    private(set) var anchor: AnchorUnit?
+    private(set) var anchor: NodeAnchor?
     
-    mutating func anchored(to anchor: AnchorUnit) {
+    mutating func anchored(to anchor: NodeAnchor) {
         if self.anchor != anchor {
             self.anchor = anchor
         }
@@ -44,7 +44,7 @@ class StatechartViewModel<Context> {
     }
 }
 
-struct StatechartView<Context,
+public struct StatechartView<Context,
                       StateContent: View,
                       StateMachineContent: View>: View {
     @State var model: StatechartViewModel<Context>
@@ -53,7 +53,7 @@ struct StatechartView<Context,
     
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
-    var body: some View {
+    public var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states) { state in
@@ -68,6 +68,7 @@ struct StatechartView<Context,
                 }
             }
         }
+        .environment(\.entryStateId, model.stateMachine.entryId)
         .environment(\.activeStateId, activeStateId)
         .animation(.bouncy, value: activeStateId)
         .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
@@ -78,7 +79,7 @@ struct StatechartView<Context,
     }
 }
 
-extension StatechartView {
+public extension StatechartView {
     init(
         stateMachine: StateMachine<Context>,
         spacing: CGFloat = 40,
@@ -93,7 +94,7 @@ extension StatechartView {
     }
 }
 
-extension StatechartView where StateMachineContent == EmptyView {
+public extension StatechartView where StateMachineContent == EmptyView {
     init(
         stateMachine: StateMachine<Context>,
         spacing: CGFloat = 40,
@@ -145,11 +146,12 @@ struct Context {
                     stateMachine.update(context: &context)
                 }
             } subStateMachine: { stateMachine in
-                Button {
-                    
-                } label: {
-                    SubStateMachineView(stateMachine: stateMachine)
-                }
+                Button(stateMachine.name) {}
+                    .buttonStyle(.detailedState {
+                        StatechartView(stateMachine: stateMachine) { state in
+                            StateView { Text(state.name) }
+                        }
+                    })
             }
             .onAppear {
                 stateMachine.enter(context: &context)

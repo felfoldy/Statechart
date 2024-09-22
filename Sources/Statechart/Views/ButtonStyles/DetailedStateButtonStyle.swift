@@ -1,14 +1,15 @@
 //
-//  StateNodeButtonStyle.swift
+//  DetailedStateButtonStyle.swift
 //  Statechart
 //
-//  Created by Tibor Felföldy on 2024-09-14.
+//  Created by Tibor Felföldy on 2024-09-21.
 //
-
 
 import SwiftUI
 
-public struct StateNodeButtonStyle: ButtonStyle {
+public struct DetailedStateButtonStyle: ButtonStyle {
+    let detail: () -> AnyView
+    
     @Environment(\.stateId) private var stateId
     @Environment(\.activeStateId) private var activeStateId
     @Environment(\.stateTranslation) private var isTranslating
@@ -20,8 +21,10 @@ public struct StateNodeButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        StateView(backgroundStyle: backgroundStyle) {
+        DetailStateView(backgroundStyle: backgroundStyle) {
             configuration.label
+        } detail: {
+            detail()
         }
         .opacity(configuration.isPressed ? 0.7 : 1)
         .onHover { isHovered in
@@ -30,8 +33,10 @@ public struct StateNodeButtonStyle: ButtonStyle {
     }
 }
 
-public extension ButtonStyle where Self == StateNodeButtonStyle {
-    static var stateNode: StateNodeButtonStyle {
-        StateNodeButtonStyle()
+public extension ButtonStyle where Self == DetailedStateButtonStyle {
+    static func detailedState<Detail: View>(@ViewBuilder detail: @escaping () -> Detail) -> Self {
+        DetailedStateButtonStyle {
+            AnyView(detail())
+        }
     }
 }

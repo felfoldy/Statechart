@@ -42,7 +42,7 @@ public struct AnyTransition<Context>: Transition {
     }
 }
 
-extension AnyTransition {
+public extension AnyTransition {
     enum ConditionType {
         case constant(Bool)
         
