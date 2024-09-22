@@ -109,3 +109,20 @@ open class StateMachine<Context>: MachineState {
         }
     }
 }
+
+public extension StateMachine {
+    func enter(_ context: Context) {
+        var context = context
+        enter(context: &context)
+    }
+    
+    func update(_ context: Context) {
+        var context = context
+        update(context: &context)
+    }
+    
+    func exit(_ context: Context) {
+        var context = context
+        exit(context: &context)
+    }
+}

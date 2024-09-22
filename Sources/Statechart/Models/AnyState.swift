@@ -9,7 +9,7 @@ import Foundation
 
 public typealias StateFunction<Context> = (inout Context) -> Void
 
-public protocol MachineState: Identifiable {
+public protocol MachineState: Identifiable, StateBuildable {
     associatedtype Context
     
     var name: String { get }
@@ -21,6 +21,10 @@ public protocol MachineState: Identifiable {
 
 public extension MachineState {
     var id: String { name }
+    
+    func asStateBuilder() -> StateBuilder<Context> {
+        StateBuilder(self)
+    }
 }
 
 public struct AnyState<Context>: MachineState {

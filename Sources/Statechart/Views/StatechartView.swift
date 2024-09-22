@@ -45,8 +45,8 @@ class StatechartViewModel<Context> {
 }
 
 public struct StatechartView<Context,
-                      StateContent: View,
-                      StateMachineContent: View>: View {
+                             StateContent: View,
+                             StateMachineContent: View>: View {
     @State var model: StatechartViewModel<Context>
     let stateView: (AnyState<Context>) -> StateContent
     let stateMachineView: (StateMachine<Context>) -> StateMachineContent

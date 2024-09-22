@@ -21,18 +21,14 @@ struct DetailStateView<Content: View, Detail: View>: View {
     }
     
     var body: some View {
-        BaseStateView(backgroundStyle: backgroundStyle) {
+        BaseStateView(cornerRadius: 16, backgroundStyle: backgroundStyle) {
             content()
                 .frame(maxWidth: .infinity)
-                .overlay(alignment: .leading) {
-                    // TODO: Make it setable.
-                    Image(systemName: "point.3.filled.connected.trianglepath.dotted")
-                }
-                .padding(.horizontal, 8)
-                .safeAreaInset(edge: .bottom) {
+                .padding([.horizontal, .top], 16)
+                .safeAreaInset(edge: .bottom, spacing: 16) {
                     detail()
                         .frame(maxWidth: .infinity)
-                        .padding(8)
+                        .padding(16)
                         .background {
                             UnevenRoundedRectangle(
                                 bottomLeadingRadius: 8,
@@ -41,7 +37,6 @@ struct DetailStateView<Content: View, Detail: View>: View {
                             .fill(.gray.opacity(0.8))
                         }
                 }
-                .padding(.top, 8)
         }
     }
 }
