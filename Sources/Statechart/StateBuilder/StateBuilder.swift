@@ -30,7 +30,6 @@ public struct StateBuilder<Context>: StateBuildable {
     /// Creates a new `StateBuilder` with the given name and optional nested states.
     ///
     /// - Note: If states are provided in the builder. This state will become a sub state machine.
-    ///
     /// - Parameters:
     ///   - name: The name of the state.
     ///   - builder: A closure that builds nested states. Default is empty.

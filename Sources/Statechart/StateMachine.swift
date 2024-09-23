@@ -126,3 +126,14 @@ public extension StateMachine {
         exit(context: &context)
     }
 }
+
+extension StateMachine: Hashable {
+    public static func == (lhs: StateMachine<Context>, rhs: StateMachine<Context>) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(activeState?.id)
+    }
+}
