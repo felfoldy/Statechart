@@ -23,11 +23,9 @@ struct DetailStateView<Content: View, Detail: View>: View {
     var body: some View {
         BaseStateView(cornerRadius: 16, backgroundStyle: backgroundStyle) {
             content()
-                .frame(maxWidth: .infinity)
                 .padding([.horizontal, .top], 16)
                 .safeAreaInset(edge: .bottom, spacing: 16) {
                     detail()
-                        .frame(maxWidth: .infinity)
                         .padding(16)
                         .background {
                             UnevenRoundedRectangle(

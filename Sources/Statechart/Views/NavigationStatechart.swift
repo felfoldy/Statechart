@@ -18,18 +18,6 @@ struct StatechartContentView<Context>: View {
                     stateSelected(state)
                 }
                 .buttonStyle(.stateNode)
-            } subStateMachine: { subMachine in
-                NavigationLink(subMachine.name, value: subMachine)
-                    .buttonStyle(.detailedState {
-                        StatechartView(stateMachine: subMachine) { state in
-                            StateView { Text(state.name) }
-                        }
-                    })
-                    .contextMenu {
-                        Button("select", systemImage: "scope") {
-                            stateSelected(AnyState(subMachine))
-                        }
-                    }
             }
             .padding(20)
         }

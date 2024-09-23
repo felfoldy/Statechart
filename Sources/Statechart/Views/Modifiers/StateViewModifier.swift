@@ -43,3 +43,9 @@ struct StateViewModifier<Context>: ViewModifier {
             .environment(\.stateTranslation, translation != .zero)
     }
 }
+
+extension View {
+    func stateViewEnvironment<Context>(model: Binding<StatechartViewModel<Context>>, state: AnyState<Context>) -> some View {
+        modifier(StateViewModifier(model: model, state: state))
+    }
+}

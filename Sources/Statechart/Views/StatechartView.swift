@@ -44,12 +44,51 @@ class StatechartViewModel<Context> {
     }
 }
 
+struct SubStatechartView<Context>: View {
+    @State var model: StatechartViewModel<Context>
+    
+    @Environment(\.statechartLayoutMaker) private var layoutMaker
+    
+    init(stateMachine: StateMachine<Context>) {
+        model = .init(stateMachine: stateMachine, spacing: 32)
+    }
+    
+    var body: some View {
+        let activeStateId = model.stateMachine.activeState?.id
+
+        StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
+            ForEach(model.stateMachine.states) { state in
+                if let stateMachine = state.stateMachine {
+                    DetailStateView {
+                        Text(state.name)
+                    } detail: {
+                        SubStatechartView(stateMachine: stateMachine)
+                    }
+                    .stateViewEnvironment(model: $model, state: state)
+                } else {
+                    StateView {
+                        Text(state.name)
+                    }
+                    .stateViewEnvironment(model: $model, state: state)
+                }
+            }
+        }
+        .environment(\.entryStateId, model.stateMachine.entryId)
+        .environment(\.activeStateId, activeStateId)
+        .animation(.bouncy, value: activeStateId)
+        .backgroundPreferenceValue(BoundsAnchorPreferenceKey.self) { anchors in
+            ForEach($model.transitions) { transition in
+                TransitionView(transition: transition, anchors: anchors)
+            }
+        }
+    }
+}
+
 public struct StatechartView<Context,
-                             StateContent: View,
-                             StateMachineContent: View>: View {
+                             StateContent: View>: View {
     @State var model: StatechartViewModel<Context>
     let stateView: (AnyState<Context>) -> StateContent
-    let stateMachineView: (StateMachine<Context>) -> StateMachineContent
+    let showSubStateMachines: Bool
     
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
@@ -57,14 +96,16 @@ public struct StatechartView<Context,
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states) { state in
-                if let stateMachine = state.stateMachine, StateMachineContent.self != EmptyView.self {
-                    stateMachineView(stateMachine).modifier(
-                        StateViewModifier(model: $model, state: state)
-                    )
+                if let stateMachine = state.stateMachine {
+                    NavigationLink(state.name, value: stateMachine)
+                        .buttonStyle(.detailedState {
+                            SubStatechartView(stateMachine: stateMachine)
+                        })
+                        .stateViewEnvironment(model: $model, state: state)
                 } else {
-                    stateView(state).modifier(
-                        StateViewModifier(model: $model, state: state)
-                    )
+                    stateView(state)
+                        .buttonStyle(.stateNode)
+                        .stateViewEnvironment(model: $model, state: state)
                 }
             }
         }
@@ -83,27 +124,12 @@ public extension StatechartView {
     init(
         stateMachine: StateMachine<Context>,
         spacing: CGFloat = 40,
-        @ViewBuilder stateView: @escaping (AnyState<Context>) -> StateContent,
-        @ViewBuilder subStateMachine: @escaping (StateMachine<Context>) -> StateMachineContent
-    ) {
-        self.init(
-            model: .init(stateMachine: stateMachine, spacing: spacing),
-            stateView: stateView,
-            stateMachineView: subStateMachine
-        )
-    }
-}
-
-public extension StatechartView where StateMachineContent == EmptyView {
-    init(
-        stateMachine: StateMachine<Context>,
-        spacing: CGFloat = 40,
         @ViewBuilder stateView: @escaping (AnyState<Context>) -> StateContent
     ) {
         self.init(
             model: .init(stateMachine: stateMachine, spacing: spacing),
             stateView: stateView,
-            stateMachineView: { _ in EmptyView() }
+            showSubStateMachines: true
         )
     }
 }
@@ -145,13 +171,6 @@ struct Context {
                     var context = Context(selectable: state.name)
                     stateMachine.update(context: &context)
                 }
-            } subStateMachine: { stateMachine in
-                Button(stateMachine.name) {}
-                    .buttonStyle(.detailedState {
-                        StatechartView(stateMachine: stateMachine) { state in
-                            StateView { Text(state.name) }
-                        }
-                    })
             }
             .onAppear {
                 stateMachine.enter(context: &context)
