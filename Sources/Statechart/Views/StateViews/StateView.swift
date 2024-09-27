@@ -46,24 +46,63 @@ struct BaseStateView<Content: View>: View {
     }
 }
 
-public struct StateView<Content: View>: View {
+public struct StateView<Content: View, Detail: View>: View {
     private let backgroundStyle: AnyShapeStyle
     private let content: () -> Content
+    private let detail: () -> Detail
     
     @Environment(\.stateId) private var stateId
     @Environment(\.entryStateId) private var entryStateId
     
     public init(backgroundStyle: AnyShapeStyle = .init(.thinMaterial),
-                @ViewBuilder content: @escaping () -> Content) {
+                @ViewBuilder content: @escaping () -> Content,
+                @ViewBuilder detail: @escaping () -> Detail) {
         self.backgroundStyle = backgroundStyle
         self.content = content
+        self.detail = detail
     }
     
     public var body: some View {
-        BaseStateView(cornerRadius: 8,
-                      backgroundStyle: backgroundStyle) {
-            content()
-                .padding(16)
+        let detail = detail()
+        
+        if detail is EmptyView {
+            BaseStateView(cornerRadius: 8,
+                          backgroundStyle: backgroundStyle) {
+                content()
+                    .padding(16)
+            }
+        } else {
+            BaseStateView(cornerRadius: 16, backgroundStyle: backgroundStyle) {
+                content()
+                    .padding([.horizontal, .top], 16)
+                    .safeAreaInset(edge: .bottom, spacing: 16) {
+                        detail
+                            .padding(16)
+                            .background {
+                                UnevenRoundedRectangle(
+                                    bottomLeadingRadius: 8,
+                                    bottomTrailingRadius: 8
+                                )
+                                .fill(.gray.opacity(0.8))
+                            }
+                    }
+            }
         }
+    }
+}
+
+extension StateView where Content == Text {
+    init(_ title: String,
+         backgroundStyle: AnyShapeStyle = .init(.thinMaterial),
+         @ViewBuilder detail: @escaping () -> Detail) {
+        self.init(content: { Text(title) }, detail: detail)
+    }
+    
+    init(
+        _ title: String,
+        backgroundStyle: AnyShapeStyle = .init(.thinMaterial)
+    ) where Detail == EmptyView {
+        self.init(title, backgroundStyle: backgroundStyle,
+                  detail: { EmptyView() })
     }
 }

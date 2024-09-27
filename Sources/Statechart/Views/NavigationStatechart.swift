@@ -14,10 +14,7 @@ struct StatechartContentView<Context>: View {
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
             StatechartView(stateMachine: stateMachine) { state in
-                Button(state.name) {
-                    stateSelected(state)
-                }
-                .buttonStyle(.stateNode)
+                stateSelected(state)
             }
             .padding(20)
         }
@@ -39,10 +36,6 @@ public struct NavigationStatechart<Context>: View {
         NavigationStack {
             StatechartContentView(stateMachine: stateMachine,
                                   stateSelected: stateSelected)
-                .navigationDestination(for: StateMachine<Context>.self) { stateMachine in
-                    StatechartContentView(stateMachine: stateMachine,
-                                          stateSelected: stateSelected)
-                }
         }
     }
 }
@@ -53,22 +46,26 @@ public struct NavigationStatechart<Context>: View {
     let stateMachine = StateMachine("root") {
         State("grounded") {
             State("idle")
-                .transition(to: "run")
+                .transition(on: "run")
             
             State("run")
-                .transition(to: "idle")
+                .transition(on: "idle")
         }
-        .transition(to: "airborne")
+        .transition(on: "airborne")
         
         State("airborne") {
             State("jump")
-                .transition(to: "fall")
+                .transition(on: "fall")
             
             State("fall")
-                .transition(to: "jump")
         }
-        .transition(to: "grounded")
+        .transition(on: "grounded")
     }
     
-    return NavigationStatechart(stateMachine: stateMachine)
+    return NavigationStatechart(stateMachine: stateMachine) { state in
+        stateMachine.update(state.name)
+    }
+    .onAppear {
+        stateMachine.enter("")
+    }
 }

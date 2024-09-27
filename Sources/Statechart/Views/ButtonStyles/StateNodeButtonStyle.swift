@@ -22,6 +22,8 @@ public struct StateNodeButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         StateView(backgroundStyle: backgroundStyle) {
             configuration.label
+        } detail: {
+            EmptyView()
         }
         .opacity(configuration.isPressed ? 0.7 : 1)
         .onHover { isHovered in

@@ -59,17 +59,13 @@ struct SubStatechartView<Context>: View {
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states) { state in
                 if let stateMachine = state.stateMachine {
-                    DetailStateView {
-                        Text(state.name)
-                    } detail: {
+                    StateView(state.name) {
                         SubStatechartView(stateMachine: stateMachine)
                     }
                     .stateViewEnvironment(model: $model, state: state)
                 } else {
-                    StateView {
-                        Text(state.name)
-                    }
-                    .stateViewEnvironment(model: $model, state: state)
+                    StateView(state.name)
+                        .stateViewEnvironment(model: $model, state: state)
                 }
             }
         }
@@ -84,28 +80,38 @@ struct SubStatechartView<Context>: View {
     }
 }
 
-public struct StatechartView<Context,
-                             StateContent: View>: View {
+public struct StatechartView<Context>: View {
     @State var model: StatechartViewModel<Context>
-    let stateView: (AnyState<Context>) -> StateContent
-    let showSubStateMachines: Bool
-    
+    let selectedState: (AnyState<Context>) -> Void
+
     @Environment(\.statechartLayoutMaker) private var layoutMaker
+    
+    @Namespace private var transition
     
     public var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states) { state in
                 if let stateMachine = state.stateMachine {
-                    NavigationLink(state.name, value: stateMachine)
-                        .buttonStyle(.detailedState {
-                            SubStatechartView(stateMachine: stateMachine)
-                        })
-                        .stateViewEnvironment(model: $model, state: state)
+                    Button(state.name) {
+                        selectedState(state)
+                    }
+                    .buttonStyle(.detailedState {
+                        SubStatechartView(stateMachine: stateMachine)
+                    })
+                    .contextMenu {
+                        NavigationLink("open") {
+                            StatechartContentView(stateMachine: stateMachine,
+                                                  stateSelected: selectedState)
+                        }
+                    }
+                    .stateViewEnvironment(model: $model, state: state)
                 } else {
-                    stateView(state)
-                        .buttonStyle(.stateNode)
-                        .stateViewEnvironment(model: $model, state: state)
+                    Button(state.name) {
+                        selectedState(state)
+                    }
+                    .buttonStyle(.stateNode)
+                    .stateViewEnvironment(model: $model, state: state)
                 }
             }
         }
@@ -121,15 +127,11 @@ public struct StatechartView<Context,
 }
 
 public extension StatechartView {
-    init(
-        stateMachine: StateMachine<Context>,
-        spacing: CGFloat = 40,
-        @ViewBuilder stateView: @escaping (AnyState<Context>) -> StateContent
-    ) {
+    init(stateMachine: StateMachine<Context>,
+         spacing: CGFloat = 40, selectedState: @escaping (AnyState<Context>) -> Void) {
         self.init(
             model: .init(stateMachine: stateMachine, spacing: spacing),
-            stateView: stateView,
-            showSubStateMachines: true
+            selectedState: selectedState
         )
     }
 }
@@ -167,10 +169,8 @@ struct Context {
     return NavigationStack {
         ScrollView([.horizontal, .vertical]) {
             StatechartView(stateMachine: stateMachine, spacing: 20) { state in
-                Button(state.name) {
-                    var context = Context(selectable: state.name)
-                    stateMachine.update(context: &context)
-                }
+                var context = Context(selectable: state.name)
+                stateMachine.update(context: &context)
             }
             .onAppear {
                 stateMachine.enter(context: &context)
