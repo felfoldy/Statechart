@@ -28,7 +28,7 @@ open class StateMachine<Context>: MachineState {
                 states: [State],
                 transitions: [Transition],
                 entryId: String) {
-        let states = states.isEmpty ? [AnyState.state("state")] : states
+        let states = states.isEmpty ? [EmptyState(name: "state")] : states
         
         self.name = name
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)

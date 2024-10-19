@@ -48,16 +48,6 @@ public struct StateCollection<Context>: RandomAccessCollection, MutableCollectio
             values.append(state)
         }
     }
-    
-    public var renderable: [AnyState<Context>] {
-        values.map { state in
-            if let stateMachine = state as? StateMachine<Context> {
-                AnyState(stateMachine)
-            } else {
-                AnyState(state)
-            }
-        }
-    }
 
     private mutating func updateIndices() {
         stateIndicies = Dictionary(grouping: values.enumerated(), by: \.element.id)

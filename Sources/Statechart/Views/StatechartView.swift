@@ -57,8 +57,8 @@ struct SubStatechartView<Context>: View {
         let activeStateId = model.stateMachine.activeState?.name
 
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(model.stateMachine.states.renderable, id: \.id) { state in
-                if let stateMachine = state.stateMachine {
+            ForEach(model.stateMachine.states, id: \.id) { state in
+                if let stateMachine = state as? StateMachine<Context> {
                     StateView(state.name) {
                         SubStatechartView(stateMachine: stateMachine)
                     }
@@ -82,7 +82,7 @@ struct SubStatechartView<Context>: View {
 
 public struct StatechartView<Context>: View {
     @State var model: StatechartViewModel<Context>
-    let selectedState: (AnyState<Context>) -> Void
+    let selectedState: (any MachineState<Context>) -> Void
 
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
@@ -91,8 +91,8 @@ public struct StatechartView<Context>: View {
     public var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(model.stateMachine.states.renderable) { state in
-                if let stateMachine = state.stateMachine {
+            ForEach(model.stateMachine.states, id: \.id) { state in
+                if let stateMachine = state as? StateMachine<Context> {
                     Button(state.name) {
                         selectedState(state)
                     }
@@ -128,7 +128,7 @@ public struct StatechartView<Context>: View {
 
 public extension StatechartView {
     init(stateMachine: StateMachine<Context>,
-         spacing: CGFloat = 40, selectedState: @escaping (AnyState<Context>) -> Void) {
+         spacing: CGFloat = 40, selectedState: @escaping (any MachineState<Context>) -> Void) {
         self.init(
             model: .init(stateMachine: stateMachine, spacing: spacing),
             selectedState: selectedState
