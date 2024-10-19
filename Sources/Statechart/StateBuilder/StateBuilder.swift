@@ -58,7 +58,7 @@ public struct StateBuilder<Context>: StateBuildable {
         self
     }
     
-    func buildState() -> AnyState<Context> {
+    func buildState() -> any MachineState<Context> {
         if let customState {
             return customState
         }
@@ -67,13 +67,11 @@ public struct StateBuilder<Context>: StateBuildable {
             return AnyState(name)
         }
 
-        return AnyState(
-            StateMachine<Context>(
-                name: name,
-                states: grouped.map { $0.buildState() },
-                transitions: grouped.flatMap { $0.buildTransitions() },
-                entryId: grouped.first?.name ?? ""
-            )
+        return StateMachine<Context>(
+            name: name,
+            states: grouped.map { $0.buildState() },
+            transitions: grouped.flatMap { $0.buildTransitions() },
+            entryId: grouped.first?.name ?? ""
         )
     }
     
@@ -93,7 +91,7 @@ public struct StateBuilder<Context>: StateBuildable {
         [expression]
     }
     
-    public static func buildExpression<State: MachineState>(_ expression: State) -> [StateBuilder<Context>] where State.Context == Context {
+    public static func buildExpression(_ expression: any MachineState<Context>) -> [StateBuilder<Context>] {
         [StateBuilder(expression)]
     }
 }

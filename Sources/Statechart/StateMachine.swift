@@ -12,23 +12,23 @@ private let log = Logger(subsystem: "com.felfoldy.Statechart", category: "StateM
 
 @Observable
 open class StateMachine<Context>: MachineState {
-    public typealias State = AnyState<Context>
+    public typealias State = any MachineState<Context>
     public typealias Transition = AnyTransition<Context>
 
     public let name: String
     public var states: StateCollection<Context>
-    public var transitions: [State.ID : [Transition]]
+    public var transitions: [String : [Transition]]
     
     /// Name of the first state to become active on enter.
-    public var entryId: State.ID
+    public var entryId: String
 
     public var activeState: State?
         
     public init(name: String,
                 states: [State],
                 transitions: [Transition],
-                entryId: State.ID) {
-        let states = states.isEmpty ? [.state("state")] : states
+                entryId: String) {
+        let states = states.isEmpty ? [AnyState.state("state")] : states
         
         self.name = name
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
@@ -76,9 +76,9 @@ open class StateMachine<Context>: MachineState {
         activeState = nil
     }
     
-    private func nextState(from activeStateID: State.ID, _ context: inout Context) -> State.ID? {
-        var visited: Set<State.ID> = []
-        var currentID: State.ID = activeStateID
+    private func nextState(from activeStateID: String, _ context: inout Context) -> String? {
+        var visited: Set<String> = []
+        var currentID: String = activeStateID
 
         checkLoop: while true {
             // Check for infinite loop.

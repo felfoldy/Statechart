@@ -7,11 +7,10 @@
 
 import Foundation
 
-public typealias StateFunction<Context> = (inout Context) -> Void
-
-public protocol MachineState: Identifiable, StateBuildable {
+public protocol MachineState<Context>: Identifiable, StateBuildable {
     associatedtype Context
     
+    var id: String { get }
     var name: String { get }
 
     func enter(context: inout Context)
@@ -27,6 +26,8 @@ public extension MachineState {
     }
 }
 
+public typealias StateFunction<Context> = (inout Context) -> Void
+
 public struct AnyState<Context>: MachineState {
     public let name: String
     
@@ -35,7 +36,7 @@ public struct AnyState<Context>: MachineState {
     private let exitFunction: StateFunction<Context>?
     let stateMachine: StateMachine<Context>?
     
-    public init<State: MachineState>(_ state: State) where State.Context == Context {
+    public init<State: MachineState<Context>>(_ state: State) {
         self.name = state.name
         self.enterFunction = state.enter
         self.updateFunction = state.update

@@ -7,7 +7,7 @@
 
 /// Array of states designed to look up states by name with `O(1)` complexity.
 public struct StateCollection<Context>: RandomAccessCollection, MutableCollection {
-    public typealias State = AnyState<Context>
+    public typealias State = any MachineState<Context>
     
     public let startIndex = 0
 
@@ -21,7 +21,7 @@ public struct StateCollection<Context>: RandomAccessCollection, MutableCollectio
         }
     }
 
-    private var stateIndicies: [State.ID : Int] = [:]
+    private var stateIndicies: [String : Int] = [:]
     
     public init(_ values: [State] = []) {
         self.values = values
@@ -49,6 +49,16 @@ public struct StateCollection<Context>: RandomAccessCollection, MutableCollectio
         }
     }
     
+    public var renderable: [AnyState<Context>] {
+        values.map { state in
+            if let stateMachine = state as? StateMachine<Context> {
+                AnyState(stateMachine)
+            } else {
+                AnyState(state)
+            }
+        }
+    }
+
     private mutating func updateIndices() {
         stateIndicies = Dictionary(grouping: values.enumerated(), by: \.element.id)
             .compactMapValues(\.first?.offset)

@@ -54,10 +54,10 @@ struct SubStatechartView<Context>: View {
     }
     
     var body: some View {
-        let activeStateId = model.stateMachine.activeState?.id
+        let activeStateId = model.stateMachine.activeState?.name
 
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(model.stateMachine.states) { state in
+            ForEach(model.stateMachine.states.renderable, id: \.id) { state in
                 if let stateMachine = state.stateMachine {
                     StateView(state.name) {
                         SubStatechartView(stateMachine: stateMachine)
@@ -91,7 +91,7 @@ public struct StatechartView<Context>: View {
     public var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(model.stateMachine.states) { state in
+            ForEach(model.stateMachine.states.renderable) { state in
                 if let stateMachine = state.stateMachine {
                     Button(state.name) {
                         selectedState(state)
@@ -136,49 +136,27 @@ public extension StatechartView {
     }
 }
 
-struct Context {
-    var selectable: String?
-}
-
 #Preview {
-    let stateMachine = StateMachine<Context>(
-        name: "Chart",
-        states: [
-            AnyState(
-                StateMachine(name: "Subgraph",
-                             states: [.state("empty"), .state("other")],
-                             transitions: [],
-                             entryId: "empty")
-            ),
+
+    NavigationStack {
+        let machine = StateMachine<String>("root") {
+            StateBuilder("Subgraph") {
+                StateBuilder("Empty")
+                
+                StateBuilder("Other")
+            }
+            .transition(to: "Other")
             
-                .state("Default"),
-            .state("Other"),
-            .state("Other2"),
-        ],
-        transitions: [
-            .transition("Other", "Default", .constant(false)),
-            .transition("Default", "Other") { $0.selectable == "Other" },
-            .transition("Other2", "Default") { $0.selectable == "Default" },
-            .transition("Other", "Other2", .constant(true)),
-        ],
-        entryId: "Default"
-    )
-    
-    var context = Context()
-    
-    return NavigationStack {
+            StateBuilder("Other")
+            
+            StateBuilder("Other2")
+        }
+        
         ScrollView([.horizontal, .vertical]) {
-            StatechartView(stateMachine: stateMachine, spacing: 20) { state in
-                var context = Context(selectable: state.name)
-                stateMachine.update(context: &context)
+            StatechartView(stateMachine: machine) { state in
+                
             }
-            .onAppear {
-                stateMachine.enter(context: &context)
-            }
-            .padding()
-            .buttonStyle(.stateNode)
         }
         .background(.gray.opacity(0.8))
-        .navigationTitle(stateMachine.name)
     }
 }
