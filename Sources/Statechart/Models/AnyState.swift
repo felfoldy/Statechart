@@ -24,6 +24,15 @@ public extension MachineState {
     func asStateBuilder() -> StateBuilder<Context> {
         StateBuilder(self)
     }
+
+    /// Default empty implemention.
+    func enter(context: inout Context) {}
+
+    /// Default empty implemention.
+    func update(context: inout Context) {}
+
+    /// Default empty implemention.
+    func exit(context: inout Context) {}
 }
 
 public typealias StateFunction<Context> = (inout Context) -> Void

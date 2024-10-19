@@ -19,13 +19,15 @@ struct TransitionBuilder<Context> {
     }
 }
 
+struct EmptyState<Context>: MachineState {
+    let name: String
+}
+
 /// A builder that constructs states and transitions for a state machine declaratively.
 @resultBuilder
 public struct StateBuilder<Context>: StateBuildable {
-    let name: String
+    let state: any MachineState<Context>
     var transitions: [TransitionBuilder<Context>] = []
-    let grouped: [StateBuilder]
-    let customState: AnyState<Context>?
 
     /// Creates a new `StateBuilder` with the given name and optional nested states.
     ///
@@ -37,20 +39,25 @@ public struct StateBuilder<Context>: StateBuildable {
         _ name: String,
         @StateBuilder<Context> _ builder: () -> [StateBuilder<Context>] = { [] }
     ) {
-        self.name = name
-        grouped = builder()
-        customState = nil
+        let group = builder()
+        
+        if group.isEmpty {
+            state = EmptyState(name: name)
+        } else {
+            state = StateMachine<Context>(
+                name: name,
+                states: group.map(\.state),
+                transitions: group.flatMap { $0.buildTransitions() },
+                entryId: group[0].state.name
+            )
+        }
     }
     
     /// Creates a new `StateBuilder` from an existing `MachineState`.
     ///
     /// - Parameter state: An existing state conforming to `MachineState`.
-    public init<State: MachineState>(
-        _ state: State
-    ) where State.Context == Context {
-        self.name = state.name
-        self.customState = AnyState(state)
-        grouped = []
+    public init(_ state: any MachineState<Context>) {
+        self.state = state
     }
     
     /// Returns itself.
@@ -58,26 +65,9 @@ public struct StateBuilder<Context>: StateBuildable {
         self
     }
     
-    func buildState() -> any MachineState<Context> {
-        if let customState {
-            return customState
-        }
-        
-        if grouped.isEmpty {
-            return AnyState(name)
-        }
-
-        return StateMachine<Context>(
-            name: name,
-            states: grouped.map { $0.buildState() },
-            transitions: grouped.flatMap { $0.buildTransitions() },
-            entryId: grouped.first?.name ?? ""
-        )
-    }
-    
     func buildTransitions() -> [AnyTransition<Context>] {
         transitions.map { transition in
-            transition.makeTransition(source: name)
+            transition.makeTransition(source: state.name)
         }
     }
     
@@ -157,9 +147,9 @@ public extension StateMachine {
         
         self.init(
             name: name,
-            states: states.map { $0.buildState() },
+            states: states.map(\.state),
             transitions: states.flatMap { $0.buildTransitions() },
-            entryId: states.first?.name ?? ""
+            entryId: states.first?.state.name ?? ""
         )
     }
 }

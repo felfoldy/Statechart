@@ -9,16 +9,16 @@ import SwiftUI
 
 struct StateViewModifier<Context>: ViewModifier {
     @Binding var model: StatechartViewModel<Context>
-    let state: AnyState<Context>
+    let state: any MachineState<Context>
     
     @State private var translation: CGSize = .zero
     
     func body(content: Content) -> some View {
         content
             // Sets anhor preference.
-            .setBoundsAnchor(for: state.id)
+            .setBoundsAnchor(for: state.name)
             // Add anchor arrows to the edges.
-            .stateAnchorsView(stateId: state.id,
+            .stateAnchorsView(stateId: state.name,
                               transitions: model.transitions)
             // StateView translation.
             .offset(translation)
@@ -31,21 +31,21 @@ struct StateViewModifier<Context>: ViewModifier {
                         // Update layout with the new translation.
                         withAnimation {
                             translation = .zero
-                            model.layout?.move(node: state.id,
+                            model.layout?.move(node: state.name,
                                                by: value.translation)
                         }
                     }
             )
             // Add set id for layout.
-            .layoutStateID(state.id)
+            .layoutStateID(state.name)
             // Set other environment values.
-            .environment(\.stateId, state.id)
+            .environment(\.stateId, state.name)
             .environment(\.stateTranslation, translation != .zero)
     }
 }
 
 extension View {
-    func stateViewEnvironment<Context>(model: Binding<StatechartViewModel<Context>>, state: AnyState<Context>) -> some View {
+    func stateViewEnvironment<Context>(model: Binding<StatechartViewModel<Context>>, state: any MachineState<Context>) -> some View {
         modifier(StateViewModifier(model: model, state: state))
     }
 }
