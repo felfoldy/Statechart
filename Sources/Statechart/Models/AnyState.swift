@@ -12,6 +12,7 @@ public protocol StateNode<Context>: Identifiable, StateBuildable {
     
     var id: String { get }
     var name: String { get }
+    var asStateMachine: (any StateMachineProtocol)? { get }
 
     func enter(context: inout Context)
     func update(context: inout Context)
@@ -25,16 +26,7 @@ public extension StateNode {
         StateBuilder(self)
     }
     
-    var asStateMachine: StateMachine<Context>? {
-        if let stateMachine = self as? StateMachine<Context> {
-            return stateMachine
-        }
-        
-        if let composedState = self as? ComposedState<Context> {
-            return composedState.states
-                .compactMap { $0.asStateMachine }.first
-        }
-
+    var asStateMachine: (any StateMachineProtocol)? {
         return nil
     }
 
@@ -46,6 +38,21 @@ public extension StateNode {
 
     /// Default empty implemention.
     func exit(context: inout Context) {}
+
+    func enter(_ context: Context) {
+        var context = context
+        enter(context: &context)
+    }
+
+    func update(_ context: Context) {
+        var context = context
+        update(context: &context)
+    }
+
+    func exit(_ context: Context) {
+        var context = context
+        exit(context: &context)
+    }
 }
 
 // MARK: - Default implementations
@@ -61,6 +68,10 @@ public struct EmptyState<Context>: StateNode {
 public struct ComposedState<Context>: StateNode {
     public let name: String
     public let states: [any StateNode<Context>]
+    
+    public var asStateMachine: (any StateMachineProtocol)? {
+        states.compactMap(\.asStateMachine).first
+    }
     
     public init(_ name: String, states: [any StateNode<Context>]) {
         self.name = name
@@ -93,7 +104,11 @@ public struct SubContextState<SourceContext, TargetContext>: StateNode {
     let targetState: any StateNode<TargetContext>
     
     public var name: String { targetState.name }
-    
+
+    public var asStateMachine: (any StateMachineProtocol)? {
+        targetState.asStateMachine
+    }
+
     public func enter(context: inout SourceContext) {
         var target = transform(context)
         targetState.enter(context: &target)

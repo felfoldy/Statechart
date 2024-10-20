@@ -26,13 +26,13 @@ struct TransitionDescription: Identifiable {
 }
 
 @Observable
-class StatechartViewModel<Context> {
-    var stateMachine: StateMachine<Context>
+class StatechartViewModel {
+    var stateMachine: any StateMachineProtocol
     let spacing: CGFloat
     var layout: StateMachineLayoutCache?
     var transitions: [TransitionDescription]
     
-    init(stateMachine: StateMachine<Context>, spacing: CGFloat) {
+    init(stateMachine: any StateMachineProtocol, spacing: CGFloat) {
         self.stateMachine = stateMachine
         self.spacing = spacing
         transitions = stateMachine.transitions
@@ -44,12 +44,12 @@ class StatechartViewModel<Context> {
     }
 }
 
-struct SubStatechartView<Context>: View {
-    @State var model: StatechartViewModel<Context>
+struct SubStatechartView: View {
+    @State var model: StatechartViewModel
     
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
-    init(stateMachine: StateMachine<Context>) {
+    init(stateMachine: any StateMachineProtocol) {
         model = .init(stateMachine: stateMachine, spacing: 32)
     }
     
@@ -57,7 +57,7 @@ struct SubStatechartView<Context>: View {
         let activeStateId = model.stateMachine.activeState?.name
 
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(model.stateMachine.states, id: \.id) { state in
+            ForEach(model.stateMachine.anyStates, id: \.id) { state in
                 if let stateMachine = state.asStateMachine {
                     StateView(state.name) {
                         SubStatechartView(stateMachine: stateMachine)
@@ -80,9 +80,9 @@ struct SubStatechartView<Context>: View {
     }
 }
 
-public struct StatechartView<Context>: View {
-    @State var model: StatechartViewModel<Context>
-    let selectedState: (any StateNode<Context>) -> Void
+public struct StatechartView: View {
+    @State var model: StatechartViewModel
+    let selectedState: (any StateNode) -> Void
 
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
@@ -91,7 +91,7 @@ public struct StatechartView<Context>: View {
     public var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
-            ForEach(model.stateMachine.states, id: \.id) { state in
+            ForEach(model.stateMachine.anyStates, id: \.id) { state in
                 if let stateMachine = state.asStateMachine {
                     Button(state.name) {
                         selectedState(state)
@@ -127,8 +127,8 @@ public struct StatechartView<Context>: View {
 }
 
 public extension StatechartView {
-    init(stateMachine: StateMachine<Context>,
-         spacing: CGFloat = 40, selectedState: @escaping (any StateNode<Context>) -> Void) {
+    init(stateMachine: any StateMachineProtocol,
+         spacing: CGFloat = 40, selectedState: @escaping (any StateNode) -> Void) {
         self.init(
             model: .init(stateMachine: stateMachine, spacing: spacing),
             selectedState: selectedState

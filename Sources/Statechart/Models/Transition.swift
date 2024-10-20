@@ -5,7 +5,7 @@
 //  Created by Tibor Felföldy on 2024-09-19.
 //
 
-public protocol Transition: Identifiable {
+public protocol Transition<Context>: Identifiable {
     associatedtype Context
 
     var sourceId: String { get }

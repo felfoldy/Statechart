@@ -10,14 +10,33 @@ import LogTools
 
 private let log = Logger(subsystem: "com.felfoldy.Statechart", category: "StateMachine")
 
+public protocol StateMachineProtocol<Context>: StateNode {
+    associatedtype Context
+    
+    var states: StateCollection<Context> { get }
+    var transitions: [String : [any Transition<Context>]] { get }
+    var entryId: String { get }
+    var activeState: (any StateNode<Context>)? { get }
+}
+
+extension StateMachineProtocol {
+    /// Context type ereased StateNode.
+    var anyStates: [any StateNode] {
+        Array(states)
+    }
+
+    public var asStateMachine: (any StateMachineProtocol)? {
+        self
+    }
+}
+
 @Observable
-open class StateMachine<Context>: StateNode {
+open class StateMachine<Context>: StateMachineProtocol {
     public typealias State = any StateNode<Context>
-    public typealias Transition = AnyTransition<Context>
 
     public let name: String
     public var states: StateCollection<Context>
-    public var transitions: [String : [Transition]]
+    public var transitions: [String : [any Transition<Context>]]
     
     /// Name of the first state to become active on enter.
     public var entryId: String
@@ -26,7 +45,7 @@ open class StateMachine<Context>: StateNode {
         
     public init(name: String,
                 states: [State],
-                transitions: [Transition],
+                transitions: [any Transition<Context>],
                 entryId: String) {
         let states = states.isEmpty ? [EmptyState("state")] : states
 
@@ -107,23 +126,6 @@ open class StateMachine<Context>: StateNode {
             // If visited stays empty that means we found no transition.
             return visited.isEmpty ? nil : currentID
         }
-    }
-}
-
-public extension StateMachine {
-    func enter(_ context: Context) {
-        var context = context
-        enter(context: &context)
-    }
-
-    func update(_ context: Context) {
-        var context = context
-        update(context: &context)
-    }
-
-    func exit(_ context: Context) {
-        var context = context
-        exit(context: &context)
     }
 }
 

@@ -11,8 +11,8 @@ private struct NodeIdentifierValueKey: LayoutValueKey {
     static let defaultValue: String? = nil
 }
 
-struct StateMachineLayout<Context>: Layout {
-    @Binding var model: StatechartViewModel<Context>
+struct StateMachineLayout: Layout {
+    @Binding var model: StatechartViewModel
     let layoutMaker: any StateMachineLayoutMaker
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout StateMachineLayoutCache) -> CGSize {
