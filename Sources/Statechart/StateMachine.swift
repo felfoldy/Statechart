@@ -10,11 +10,13 @@ import LogTools
 
 private let log = Logger(subsystem: "com.felfoldy.Statechart", category: "StateMachine")
 
+public typealias TransitionMap<Context> = [String : [any Transition<Context>]]
+
 public protocol StateMachineProtocol<Context>: StateNode {
     associatedtype Context
     
     var states: StateCollection<Context> { get }
-    var transitions: [String : [any Transition<Context>]] { get }
+    var transitions: TransitionMap<Context> { get }
     var entryId: String { get }
     var activeState: (any StateNode<Context>)? { get }
 }
@@ -25,9 +27,7 @@ extension StateMachineProtocol {
         Array(states)
     }
 
-    public var asStateMachine: (any StateMachineProtocol)? {
-        self
-    }
+    public var asStateMachine: (any StateMachineProtocol)? { self }
 }
 
 @Observable
@@ -36,7 +36,7 @@ open class StateMachine<Context>: StateMachineProtocol {
 
     public let name: String
     public var states: StateCollection<Context>
-    public var transitions: [String : [any Transition<Context>]]
+    public var transitions: TransitionMap<Context>
     
     /// Name of the first state to become active on enter.
     public var entryId: String

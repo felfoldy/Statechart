@@ -41,9 +41,9 @@ public struct NavigationStatechart: View {
 }
 
 #Preview {
-    typealias State = StateBuilder<String>
+    typealias State = StateBuilder
     
-    let stateMachine = StateMachine("root") {
+    let stateMachine = StateMachine<String>("root") {
         State("grounded") {
             State("idle")
                 .transition(on: "run")
