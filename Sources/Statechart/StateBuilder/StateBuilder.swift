@@ -19,10 +19,6 @@ struct TransitionBuilder<Context> {
     }
 }
 
-struct EmptyState<Context>: MachineState {
-    let name: String
-}
-
 /// A builder that constructs states and transitions for a state machine declaratively.
 @resultBuilder
 public struct StateBuilder<Context>: StateBuildable {
@@ -42,7 +38,7 @@ public struct StateBuilder<Context>: StateBuildable {
         let group = builder()
         
         if group.isEmpty {
-            state = EmptyState(name: name)
+            state = EmptyState(name)
         } else {
             state = StateMachine<Context>(
                 name: name,

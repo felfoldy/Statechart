@@ -58,7 +58,7 @@ struct SubStatechartView<Context>: View {
 
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states, id: \.id) { state in
-                if let stateMachine = state as? StateMachine<Context> {
+                if let stateMachine = state.asStateMachine {
                     StateView(state.name) {
                         SubStatechartView(stateMachine: stateMachine)
                     }
@@ -92,7 +92,7 @@ public struct StatechartView<Context>: View {
         let activeStateId = model.stateMachine.activeState?.id
         StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
             ForEach(model.stateMachine.states, id: \.id) { state in
-                if let stateMachine = state as? StateMachine<Context> {
+                if let stateMachine = state.asStateMachine {
                     Button(state.name) {
                         selectedState(state)
                     }

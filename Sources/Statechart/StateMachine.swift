@@ -28,8 +28,8 @@ open class StateMachine<Context>: MachineState {
                 states: [State],
                 transitions: [Transition],
                 entryId: String) {
-        let states = states.isEmpty ? [EmptyState(name: "state")] : states
-        
+        let states = states.isEmpty ? [EmptyState("state")] : states
+
         self.name = name
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
         self.entryId = entryId
@@ -115,12 +115,12 @@ public extension StateMachine {
         var context = context
         enter(context: &context)
     }
-    
+
     func update(_ context: Context) {
         var context = context
         update(context: &context)
     }
-    
+
     func exit(_ context: Context) {
         var context = context
         exit(context: &context)

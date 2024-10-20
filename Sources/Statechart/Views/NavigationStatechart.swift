@@ -58,6 +58,9 @@ public struct NavigationStatechart<Context>: View {
                 .transition(on: "fall")
             
             State("fall")
+            
+            EmptyState("empty")
+                .join(with: StateMachine("empty", { EmptyState("call") }))
         }
         .transition(on: "grounded")
     }
