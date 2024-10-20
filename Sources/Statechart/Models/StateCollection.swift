@@ -7,7 +7,7 @@
 
 /// Array of states designed to look up states by name with `O(1)` complexity.
 public struct StateCollection<Context>: RandomAccessCollection, MutableCollection {
-    public typealias State = any MachineState<Context>
+    public typealias State = any StateNode<Context>
     
     public let startIndex = 0
 

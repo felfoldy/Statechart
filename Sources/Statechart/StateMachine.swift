@@ -11,8 +11,8 @@ import LogTools
 private let log = Logger(subsystem: "com.felfoldy.Statechart", category: "StateMachine")
 
 @Observable
-open class StateMachine<Context>: MachineState {
-    public typealias State = any MachineState<Context>
+open class StateMachine<Context>: StateNode {
+    public typealias State = any StateNode<Context>
     public typealias Transition = AnyTransition<Context>
 
     public let name: String

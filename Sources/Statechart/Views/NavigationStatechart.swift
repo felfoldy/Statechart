@@ -9,7 +9,7 @@ import SwiftUI
 
 struct StatechartContentView<Context>: View {
     let stateMachine: StateMachine<Context>
-    let stateSelected: (any MachineState<Context>) -> Void
+    let stateSelected: (any StateNode<Context>) -> Void
 
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
@@ -25,9 +25,9 @@ struct StatechartContentView<Context>: View {
 
 public struct NavigationStatechart<Context>: View {
     @State var stateMachine: StateMachine<Context>
-    let stateSelected: (any MachineState<Context>) -> Void
+    let stateSelected: (any StateNode<Context>) -> Void
     
-    public init(stateMachine: StateMachine<Context>, stateSelected: @escaping (any MachineState<Context>) -> Void = { _ in }) {
+    public init(stateMachine: StateMachine<Context>, stateSelected: @escaping (any StateNode<Context>) -> Void = { _ in }) {
         self.stateMachine = stateMachine
         self.stateSelected = stateSelected
     }

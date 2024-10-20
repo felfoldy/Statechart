@@ -82,7 +82,7 @@ struct SubStatechartView<Context>: View {
 
 public struct StatechartView<Context>: View {
     @State var model: StatechartViewModel<Context>
-    let selectedState: (any MachineState<Context>) -> Void
+    let selectedState: (any StateNode<Context>) -> Void
 
     @Environment(\.statechartLayoutMaker) private var layoutMaker
     
@@ -128,7 +128,7 @@ public struct StatechartView<Context>: View {
 
 public extension StatechartView {
     init(stateMachine: StateMachine<Context>,
-         spacing: CGFloat = 40, selectedState: @escaping (any MachineState<Context>) -> Void) {
+         spacing: CGFloat = 40, selectedState: @escaping (any StateNode<Context>) -> Void) {
         self.init(
             model: .init(stateMachine: stateMachine, spacing: spacing),
             selectedState: selectedState

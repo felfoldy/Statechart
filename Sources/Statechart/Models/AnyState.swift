@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol MachineState<Context>: Identifiable, StateBuildable {
+public protocol StateNode<Context>: Identifiable, StateBuildable {
     associatedtype Context
     
     var id: String { get }
@@ -18,7 +18,7 @@ public protocol MachineState<Context>: Identifiable, StateBuildable {
     func exit(context: inout Context)
 }
 
-public extension MachineState {
+public extension StateNode {
     var id: String { name }
     
     func asStateBuilder() -> StateBuilder<Context> {
@@ -50,7 +50,7 @@ public extension MachineState {
 
 // MARK: - Default implementations
 
-public struct EmptyState<Context>: MachineState {
+public struct EmptyState<Context>: StateNode {
     public let name: String
     
     public init(_ name: String) {
@@ -58,11 +58,11 @@ public struct EmptyState<Context>: MachineState {
     }
 }
 
-public struct ComposedState<Context>: MachineState {
+public struct ComposedState<Context>: StateNode {
     public let name: String
-    public let states: [any MachineState<Context>]
+    public let states: [any StateNode<Context>]
     
-    public init(_ name: String, states: [any MachineState<Context>]) {
+    public init(_ name: String, states: [any StateNode<Context>]) {
         self.name = name
         self.states = states
     }
@@ -80,17 +80,17 @@ public struct ComposedState<Context>: MachineState {
     }
 }
 
-extension MachineState {
-    func join(with states: (any MachineState<Context>)...) -> some MachineState<Context> {
+extension StateNode {
+    func join(with states: (any StateNode<Context>)...) -> some StateNode<Context> {
         ComposedState(name, states: [self] + states)
     }
 }
 
-public struct SubContextState<SourceContext, TargetContext>: MachineState {
+public struct SubContextState<SourceContext, TargetContext>: StateNode {
     public typealias Context = SourceContext
     
     let transform: (SourceContext) -> TargetContext
-    let targetState: any MachineState<TargetContext>
+    let targetState: any StateNode<TargetContext>
     
     public var name: String { targetState.name }
     
@@ -110,8 +110,8 @@ public struct SubContextState<SourceContext, TargetContext>: MachineState {
     }
 }
 
-extension MachineState {
-    public func mapContext<SourceContext>(_ transform: @escaping (SourceContext) -> Context) -> some MachineState<SourceContext> {
+extension StateNode {
+    public func mapContext<SourceContext>(_ transform: @escaping (SourceContext) -> Context) -> some StateNode<SourceContext> {
         SubContextState(transform: transform, targetState: self)
     }
 }

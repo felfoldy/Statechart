@@ -9,7 +9,7 @@ import SwiftUI
 
 struct StateViewModifier<Context>: ViewModifier {
     @Binding var model: StatechartViewModel<Context>
-    let state: any MachineState<Context>
+    let state: any StateNode<Context>
     
     @State private var translation: CGSize = .zero
     
@@ -45,7 +45,7 @@ struct StateViewModifier<Context>: ViewModifier {
 }
 
 extension View {
-    func stateViewEnvironment<Context>(model: Binding<StatechartViewModel<Context>>, state: any MachineState<Context>) -> some View {
+    func stateViewEnvironment<Context>(model: Binding<StatechartViewModel<Context>>, state: any StateNode<Context>) -> some View {
         modifier(StateViewModifier(model: model, state: state))
     }
 }

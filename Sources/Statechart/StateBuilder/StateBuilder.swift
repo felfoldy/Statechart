@@ -22,7 +22,7 @@ struct TransitionBuilder<Context> {
 /// A builder that constructs states and transitions for a state machine declaratively.
 @resultBuilder
 public struct StateBuilder<Context>: StateBuildable {
-    let state: any MachineState<Context>
+    let state: any StateNode<Context>
     var transitions: [TransitionBuilder<Context>] = []
 
     /// Creates a new `StateBuilder` with the given name and optional nested states.
@@ -52,7 +52,7 @@ public struct StateBuilder<Context>: StateBuildable {
     /// Creates a new `StateBuilder` from an existing `MachineState`.
     ///
     /// - Parameter state: An existing state conforming to `MachineState`.
-    public init(_ state: any MachineState<Context>) {
+    public init(_ state: any StateNode<Context>) {
         self.state = state
     }
     
@@ -77,7 +77,7 @@ public struct StateBuilder<Context>: StateBuildable {
         [expression]
     }
     
-    public static func buildExpression(_ expression: any MachineState<Context>) -> [StateBuilder<Context>] {
+    public static func buildExpression(_ expression: any StateNode<Context>) -> [StateBuilder<Context>] {
         [StateBuilder(expression)]
     }
 }
