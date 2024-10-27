@@ -47,6 +47,7 @@ public struct NavigationStatechart: View {
         State("grounded") {
             State("idle")
                 .transition(on: "run")
+                .onEnter { print("enter: \($0)") }
             
             State("run")
                 .transition(on: "idle")
@@ -59,8 +60,8 @@ public struct NavigationStatechart: View {
             
             State("fall")
             
-            EmptyState("empty")
-                .join(with: StateMachine("empty", { EmptyState("call") }))
+            AnyState("empty")
+                .join(with: StateMachine("empty", { AnyState("call") }))
                 .mapContext(\.count)
         }
         .transition(on: "grounded")

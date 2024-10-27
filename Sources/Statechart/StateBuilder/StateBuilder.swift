@@ -14,7 +14,7 @@ struct TransitionBuilder<Context> {
         self.condition = condition
     }
     
-    func makeTransition(source: String) -> AnyTransition<Context> {
+    func makeTransition(source: String) -> any Transition<Context> {
         AnyTransition(source: source, target: target, condition)
     }
 }
@@ -24,6 +24,9 @@ struct TransitionBuilder<Context> {
 public struct StateBuilder<Context>: StateBuildable {
     let state: any StateNode<Context>
     var transitions: [TransitionBuilder<Context>] = []
+    var enters: [StateFunction<Context>] = []
+    var updates: [StateFunction<Context>] = []
+    var exits: [StateFunction<Context>] = []
 
     /// Creates a new `StateBuilder` with the given name and optional nested states.
     ///
@@ -38,11 +41,11 @@ public struct StateBuilder<Context>: StateBuildable {
         let group = builder()
         
         if group.isEmpty {
-            state = EmptyState(name)
+            state = AnyState(name)
         } else {
             state = StateMachine<Context>(
                 name: name,
-                states: group.map(\.state),
+                states: group.map(\.composedState),
                 transitions: group.flatMap { $0.buildTransitions() },
                 entryId: group[0].state.name
             )
@@ -61,7 +64,26 @@ public struct StateBuilder<Context>: StateBuildable {
         self
     }
     
-    func buildTransitions() -> [AnyTransition<Context>] {
+    var composedState: any StateNode<Context> {
+        if enters.isEmpty, updates.isEmpty, exits.isEmpty {
+            return state
+        }
+        
+        return state.join(with: AnyState(
+            state.name,
+            enter: { context in
+                enters.forEach { $0(&context) }
+            },
+            update: { context in
+                updates.forEach { $0(&context) }
+            },
+            exit: { context in
+                exits.forEach { $0(&context) }
+            }
+        ))
+    }
+    
+    func buildTransitions() -> [any Transition<Context>] {
         transitions.map { transition in
             transition.makeTransition(source: state.name)
         }
@@ -114,6 +136,24 @@ public extension StateBuildable {
             builder.transitions.append(
                 TransitionBuilder(target: target, condition: condition)
             )
+        }
+    }
+    
+    func onEnter(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
+        modify { builder in
+            builder.enters.append(function)
+        }
+    }
+    
+    func onUpdate(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
+        modify { builder in
+            builder.updates.append(function)
+        }
+    }
+    
+    func onExit(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
+        modify { builder in
+            builder.exits.append(function)
         }
     }
 }

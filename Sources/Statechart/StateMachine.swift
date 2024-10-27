@@ -47,7 +47,7 @@ open class StateMachine<Context>: StateMachineProtocol {
                 states: [State],
                 transitions: [any Transition<Context>],
                 entryId: String) {
-        let states = states.isEmpty ? [EmptyState("state")] : states
+        let states = states.isEmpty ? [AnyState("state")] : states
 
         self.name = name
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
