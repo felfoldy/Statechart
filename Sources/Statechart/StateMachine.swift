@@ -80,7 +80,6 @@ open class StateMachine<Context>: StateMachineProtocol {
             }
             
             // Update the active state.
-            log.trace("Update active state: [\(state.name)] -> [\(next.name)]")
             state.exit(context: &context)
             next.enter(context: &context)
             activeState = next
