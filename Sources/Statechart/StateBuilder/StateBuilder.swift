@@ -139,19 +139,19 @@ public extension StateBuildable {
         }
     }
     
-    func onEnter(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
+    func enter(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
         modify { builder in
             builder.enters.append(function)
         }
     }
     
-    func onUpdate(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
+    func update(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
         modify { builder in
             builder.updates.append(function)
         }
     }
     
-    func onExit(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
+    func exit(_ function: @escaping StateFunction<Context>) -> StateBuilder<Context> {
         modify { builder in
             builder.exits.append(function)
         }

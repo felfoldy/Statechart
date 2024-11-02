@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "Statechart", targets: ["Statechart"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/felfoldy/LogTools.git", from: "1.0.1"),
+        .package(url: "https://github.com/felfoldy/LogTools.git", from: "1.0.2"),
     ],
     targets: [
         .target(name: "Statechart", dependencies: ["LogTools"]),

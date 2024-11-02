@@ -47,9 +47,12 @@ public struct NavigationStatechart: View {
         State("grounded") {
             State("idle")
                 .transition(on: "run")
-                .onEnter { print("enter: \($0)") }
+                .enter { print("enter: \($0)") }
             
             State("run")
+                .update {
+                    print("update: \($0)")
+                }
                 .transition(on: "idle")
         }
         .transition(on: "airborne")
