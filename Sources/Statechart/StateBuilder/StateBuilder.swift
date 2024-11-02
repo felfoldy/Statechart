@@ -183,7 +183,7 @@ public extension StateMachine {
         
         self.init(
             name: name,
-            states: states.map(\.state),
+            states: states.map(\.composedState),
             transitions: states.flatMap { $0.buildTransitions() },
             entryId: states.first?.state.name ?? ""
         )
