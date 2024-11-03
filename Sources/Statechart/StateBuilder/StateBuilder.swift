@@ -64,7 +64,7 @@ public struct StateBuilder<Context>: StateBuildable {
         self
     }
     
-    var composedState: any StateNode<Context> {
+    public var composedState: any StateNode<Context> {
         if enters.isEmpty, updates.isEmpty, exits.isEmpty {
             return state
         }
