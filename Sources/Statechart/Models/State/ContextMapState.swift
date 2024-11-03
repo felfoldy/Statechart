@@ -34,7 +34,7 @@ public struct ContextMapState<SourceContext, TargetContext>: StateNode {
 }
 
 extension StateNode {
-    public func mapContext<SourceContext>(_ transform: @escaping (SourceContext) -> Context) -> some StateNode<SourceContext> {
+    public func map<SourceContext>(_ transform: @escaping (SourceContext) -> Context) -> some StateNode<SourceContext> {
         ContextMapState(transform: transform, targetState: self)
     }
 }

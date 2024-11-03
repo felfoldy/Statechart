@@ -20,10 +20,10 @@ public protocol StateNode<Context>: Identifiable, StateBuildable {
 public extension StateNode {
     var id: String { name }
     
-    func asStateBuilder() -> StateBuilder<Context> {
+    var asStateBuilder: StateBuilder<Context> {
         StateBuilder(self)
     }
-    
+
     var asStateMachine: (any StateMachineProtocol)? {
         return nil
     }

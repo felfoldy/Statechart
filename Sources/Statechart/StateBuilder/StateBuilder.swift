@@ -60,10 +60,10 @@ public struct StateBuilder<Context>: StateBuildable {
     }
     
     /// Returns itself.
-    public func asStateBuilder() -> StateBuilder<Context> {
+    public var asStateBuilder: StateBuilder<Context> {
         self
     }
-    
+
     public var composedState: any StateNode<Context> {
         if enters.isEmpty, updates.isEmpty, exits.isEmpty {
             return state
@@ -109,16 +109,14 @@ public protocol StateBuildable {
     associatedtype Context
 
     /// Converts the conforming instance to a `StateBuilder`.
-    ///
-    /// - Returns: A `StateBuilder` representation of the instance.
-    func asStateBuilder() -> StateBuilder<Context>
+    var asStateBuilder: StateBuilder<Context> { get }
 }
 
 // MARK: - Modifiers
 
 public extension StateBuildable {
     func modify(modifier: (inout StateBuilder<Context>) -> Void) -> StateBuilder<Context> {
-        var newState = asStateBuilder()
+        var newState = asStateBuilder
         modifier(&newState)
         return newState
     }
@@ -155,6 +153,10 @@ public extension StateBuildable {
         modify { builder in
             builder.exits.append(function)
         }
+    }
+    
+    func map<SourceContext>(_ transform: @escaping (SourceContext) -> Context) -> StateBuilder<SourceContext> {
+        StateBuilder(ContextMapState(transform: transform, targetState: asStateBuilder.composedState))
     }
 }
 

@@ -108,7 +108,6 @@ open class StateMachine<Context>: StateMachineProtocol {
 
             // Check for outgoing transitions.
             guard let transitions = transitions[currentID], !transitions.isEmpty else {
-                log.error("There is no outgoing state from: \(currentID).")
                 return visited.isEmpty ? nil : currentID
             }
             

@@ -58,14 +58,16 @@ public struct NavigationStatechart: View {
         .transition(on: "airborne")
         
         State("airborne") {
-            State("jump")
+            State<Int>("jump")
+                .enter { print("enters: \($0)") }
+                .map(\.count)
                 .transition(on: "fall")
             
             State("fall")
             
             AnyState("empty")
                 .join(with: StateMachine("empty", { AnyState("call") }))
-                .mapContext(\.count)
+                .map(\.count)
         }
         .transition(on: "grounded")
     }
