@@ -42,8 +42,8 @@ public struct NavigationStatechart: View {
 #Preview {
     typealias State = StateBuilder
     
-    let stateMachine = StateMachine<String>("root") {
-        State("grounded") {
+    let stateMachine = StateMachine<String>("root", layout: .horizontal) {
+        State("grounded", layout: .vertical) {
             State("idle")
                 .transition(on: "run")
                 .enter { print("enter: \($0)") }
@@ -56,17 +56,13 @@ public struct NavigationStatechart: View {
         }
         .transition(on: "airborne")
         
-        State("airborne", layout: .stack(.vertical)) {
+        State("airborne", layout: .vertical) {
             State<Int>("jump")
                 .enter { print("enters: \($0)") }
                 .map(\.count)
                 .transition(on: "fall")
             
             State("fall")
-            
-            AnyState("empty")
-                .join(with: StateMachine("empty", { AnyState("call") }))
-                .map(\.count)
         }
         .transition(on: "grounded")
     }

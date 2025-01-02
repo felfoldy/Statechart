@@ -23,14 +23,25 @@ public struct StackLayoutMaker: StateMachineLayoutMaker {
         var rects = [String : CGRect]()
         var offset: CGFloat = 0
         
+        let maxSize = stateDimensions
+            .map(\.size)
+            .reduce(CGSize.zero) { result, size in
+                CGSize(width: max(result.width, size.width),
+                       height: max(result.height, size.height))
+            }
+
         for (name, size) in stateDimensions {
             switch direction {
             case .horizontal:
-                rects[name] = CGRect(origin: CGPoint(x: offset, y: 0),
+                // Center alignment.
+                let y = (maxSize.height - size.height) / 2
+                rects[name] = CGRect(origin: CGPoint(x: offset, y: y),
                                      size: size)
                 offset += size.width + spacing
             case .vertical:
-                rects[name] = CGRect(origin: CGPoint(x: 0, y: offset),
+                // Center alignment.
+                let x = (maxSize.width - size.width) / 2
+                rects[name] = CGRect(origin: CGPoint(x: x, y: offset),
                                      size: size)
                 offset += size.height + spacing
             }
@@ -41,8 +52,12 @@ public struct StackLayoutMaker: StateMachineLayoutMaker {
 }
 
 public extension StateMachineLayoutMaker where Self == StackLayoutMaker {
-    static func stack(_ direction: Axis) -> Self {
-        StackLayoutMaker(direction: direction)
+    static var horizontal: Self {
+        StackLayoutMaker(direction: .horizontal)
+    }
+
+    static var vertical: Self {
+        StackLayoutMaker(direction: .vertical)
     }
 }
 

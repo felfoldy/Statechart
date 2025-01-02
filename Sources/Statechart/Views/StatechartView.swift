@@ -135,8 +135,8 @@ public extension StatechartView {
 #Preview {
 
     NavigationStack {
-        let machine = StateMachine<String>("root") {
-            StateBuilder("Subgraph", layout: .stack(.vertical)) {
+        let machine = StateMachine<String>("root", layout: .horizontal) {
+            StateBuilder("Subgraph", layout: .vertical) {
                 StateBuilder("Empty")
                 
                 StateBuilder("Other")
