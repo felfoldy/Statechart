@@ -33,9 +33,11 @@ public struct StateBuilder<Context>: StateBuildable {
     /// - Note: If states are provided in the builder. This state will become a sub state machine.
     /// - Parameters:
     ///   - name: The name of the state.
+    ///   - layout: Layout of the chart.
     ///   - builder: A closure that builds nested states. Default is empty.
     public init(
         _ name: String,
+        layout: StateMachineLayoutMaker = .radial,
         @StateBuilder<Context> _ builder: () -> [StateBuilder<Context>] = { [] }
     ) {
         let group = builder()
@@ -47,7 +49,8 @@ public struct StateBuilder<Context>: StateBuildable {
                 name: name,
                 states: group.map(\.composedState),
                 transitions: group.flatMap { $0.buildTransitions() },
-                entryId: group[0].state.name
+                entryId: group[0].state.name,
+                layout: layout
             )
         }
     }
@@ -176,9 +179,11 @@ public extension StateMachine {
     ///
     /// - Parameters:
     ///   - name: Name of the state machine.
+    ///   - layout: Layout of the StateMachine.
     ///   - builder: `StateBuilder` expression.
     convenience init(
         _ name: String,
+        layout: StateMachineLayoutMaker = .radial,
         @StateBuilder<Context> _ builder: () -> [StateBuilder<Context>]
     ) {
         let states = builder()
@@ -187,7 +192,8 @@ public extension StateMachine {
             name: name,
             states: states.map(\.composedState),
             transitions: states.flatMap { $0.buildTransitions() },
-            entryId: states.first?.state.name ?? ""
+            entryId: states.first?.state.name ?? "",
+            layout: layout
         )
     }
 }

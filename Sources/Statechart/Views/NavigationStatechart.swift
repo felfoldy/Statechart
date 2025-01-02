@@ -56,7 +56,7 @@ public struct NavigationStatechart: View {
         }
         .transition(on: "airborne")
         
-        State("airborne") {
+        State("airborne", layout: .stack(.vertical)) {
             State<Int>("jump")
                 .enter { print("enters: \($0)") }
                 .map(\.count)

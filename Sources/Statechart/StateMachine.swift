@@ -19,6 +19,7 @@ public protocol StateMachineProtocol<Context>: StateNode {
     var transitions: TransitionMap<Context> { get }
     var entryId: String { get }
     var activeState: (any StateNode<Context>)? { get }
+    var layout: StateMachineLayoutMaker { get }
 }
 
 extension StateMachineProtocol {
@@ -37,6 +38,7 @@ open class StateMachine<Context>: StateMachineProtocol {
     public let name: String
     public var states: StateCollection<Context>
     public var transitions: TransitionMap<Context>
+    public var layout: StateMachineLayoutMaker
     
     /// Name of the first state to become active on enter.
     public var entryId: String
@@ -46,13 +48,15 @@ open class StateMachine<Context>: StateMachineProtocol {
     public init(name: String,
                 states: [State],
                 transitions: [any Transition<Context>],
-                entryId: String) {
+                entryId: String,
+                layout: StateMachineLayoutMaker = .radial) {
         let states = states.isEmpty ? [AnyState("state")] : states
 
         self.name = name
         self.transitions = Dictionary(grouping: transitions, by: \.sourceId)
         self.entryId = entryId
         self.states = StateCollection(states)
+        self.layout = layout
     }
     
     open func enter(context: inout Context) {

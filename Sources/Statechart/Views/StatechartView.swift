@@ -46,9 +46,7 @@ class StatechartViewModel {
 
 struct SubStatechartView: View {
     @State var model: StatechartViewModel
-    
-    @Environment(\.statechartLayoutMaker) private var layoutMaker
-    
+        
     init(stateMachine: any StateMachineProtocol) {
         model = .init(stateMachine: stateMachine, spacing: 32)
     }
@@ -56,7 +54,7 @@ struct SubStatechartView: View {
     var body: some View {
         let activeStateId = model.stateMachine.activeState?.name
 
-        StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
+        StateMachineLayout(model: $model, layoutMaker: model.stateMachine.layout) {
             ForEach(model.stateMachine.anyStates, id: \.id) { state in
                 if let stateMachine = state.asStateMachine {
                     StateView(state.name) {
@@ -83,14 +81,12 @@ struct SubStatechartView: View {
 public struct StatechartView: View {
     @State var model: StatechartViewModel
     let selectedState: (any StateNode) -> Void
-
-    @Environment(\.statechartLayoutMaker) private var layoutMaker
     
     @Namespace private var transition
     
     public var body: some View {
         let activeStateId = model.stateMachine.activeState?.id
-        StateMachineLayout(model: $model, layoutMaker: layoutMaker) {
+        StateMachineLayout(model: $model, layoutMaker: model.stateMachine.layout) {
             ForEach(model.stateMachine.anyStates, id: \.id) { state in
                 if let stateMachine = state.asStateMachine {
                     Button(state.name) {
@@ -140,7 +136,7 @@ public extension StatechartView {
 
     NavigationStack {
         let machine = StateMachine<String>("root") {
-            StateBuilder("Subgraph") {
+            StateBuilder("Subgraph", layout: .stack(.vertical)) {
                 StateBuilder("Empty")
                 
                 StateBuilder("Other")
@@ -151,7 +147,7 @@ public extension StatechartView {
             
             StateBuilder("Other2")
         }
-        
+                
         ScrollView([.horizontal, .vertical]) {
             StatechartView(stateMachine: machine) { state in
                 
