@@ -18,7 +18,6 @@ struct StatechartContentView: View {
             }
             .padding(20)
         }
-        .background(.gray.opacity(0.8))
         .navigationTitle(stateMachine.name)
     }
 }
